@@ -28,15 +28,31 @@
 #
 
 id:1
-description:1 GB test - baseline
+description:accept all
 filter:
 pcap_file:igalia/one-gigabyte.pcap
 expected_result:1166716
 enabled:true
 
+accept-all accept-none ip tcp   "tcp port=80"
+
 id:2
-description:1 GB test - ip
+description:ip
 filter: ip
+pcap_file:igalia/one-gigabyte.pcap
+expected_result:1166716
+enabled:true
+
+id:3
+description:tcp
+filter: tcp
+pcap_file:igalia/one-gigabyte.pcap
+expected_result:1166716
+enabled:true
+
+id:4
+description:tcp port 5555
+filter: tcp port 5555
 pcap_file:igalia/one-gigabyte.pcap
 expected_result:1166716
 enabled:true

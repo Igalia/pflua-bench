@@ -75,6 +75,7 @@ function get_all_tests(p)
 end
 
 local function assert_count(filter, file, pkt_expected)
+   local pkt_total = 0
    local pkt_match = 0
    local lapse = 0
    local pass = false
@@ -84,13 +85,14 @@ local function assert_count(filter, file, pkt_expected)
    while true do
       local pkt, hdr = records()
       if not pkt then break end
+      pkt_total = pkt_total + 1
       if libpcap.pcap_offline_filter(f, hdr, pkt) ~= 0 then
          pkt_match = pkt_match + 1
       end
    end
    lapse = os.clock() - start
    pass = pkt_match == pkt_expected
-   return pkt_match, lapse, pass
+   return pkt_total, pkt_match, lapse, pass
 end
 
 function run_test_plan(p)
@@ -122,21 +124,27 @@ function run_test_plan(p)
       else
          print("false")
       end
-      local pkt_seen = 0
+      local pkt_match = 0
       local passed = false
       local elapsed_time = 0
       io.write("tc id " .. i)
       if t['enabled'] then
-         pkt_seen, elapsed_time, passed = assert_count(t['filter'], "ts/pcaps/"..t['pcap_file'], t['expected_result'])
+         pkt_total, pkt_match, elapsed_time, passed = assert_count(t['filter'], "ts/pcaps/"..t['pcap_file'], t['expected_result'])
          if passed then
             print(" PASS")
          else
-            print(" FAIL (" .. pkt_seen .. " != " .. t['expected_result'] .. ")")
+            print(" FAIL (" .. pkt_match .. " != " .. t['expected_result'] .. ")")
          end
       else
          print(" SKIP")
       end
-      print("tc id " .. i .. " AVG ET " .. elapsed_time)
+      print("tc id " .. i .. " ET " .. elapsed_time)
+      print("tc id " .. i .. " TP " .. pkt_total)
+      local pps = 0
+      if elapsed_time ~= 0 then
+	 pps = pkt_total / elapsed_time
+      end
+      print("tc id " .. i .. " PPS " .. pps)
    end
 end
 

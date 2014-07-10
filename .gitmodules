@@ -1,0 +1,3 @@
+[submodule "src/deps/pflua"]
+	path = src/deps/pflua
+	url = https://jmunhoz@github.com/Igalia/pflua

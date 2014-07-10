@@ -5,10 +5,13 @@ all: check test-all
 check:
 	luajit -e 'print("check passed!")'
 
-test-all: test-bpf-libpcap
+test: test-bpf-libpcap test-bpf-pflua
 
 test-bpf-libpcap:
 	luajit -l bpf_libpcap_ts -e 'bpf_libpcap_ts.run()'
+
+test-bpf-pflua:
+	(cd deps/pflua/src && make test)
 
 csv: csv-bpf-libpcap csv-bpf-pflua
 

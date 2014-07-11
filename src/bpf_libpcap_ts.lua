@@ -1,6 +1,6 @@
 module("bpf_libpcap_ts",package.seeall)
 
-package.path = package.path .. ";../../pflua/src/?.lua"
+package.path = package.path .. ";../deps/pflua/src/?.lua"
 
 local savefile = require("pf.savefile")
 local libpcap = require("pf.libpcap")
@@ -86,7 +86,7 @@ local function assert_count(filter, file, pkt_expected)
       local pkt, hdr = records()
       if not pkt then break end
       pkt_total = pkt_total + 1
-      if libpcap.pcap_offline_filter(f, hdr, pkt) ~= 0 then
+      if libpcap.offline_filter(f, hdr, pkt) ~= 0 then
          pkt_match = pkt_match + 1
       end
    end

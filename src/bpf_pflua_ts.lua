@@ -1,6 +1,9 @@
 module("bpf_pflua_ts",package.seeall)
 
+package.path = package.path .. ";../deps/pflua/src/?.lua"
+
 local pf = require("pf")
+local savefile = require("pf.savefile")
 
 --[[
 There is no directory listing function in Lua as
@@ -37,17 +40,12 @@ end
 -- retrieve all .ts files under ts/test directory
 -- TODO: ts/tests should be some kind of conf var
 function get_all_plans()
-   local path_tests = "../../../../src/"
-   if not dir_exist(path_tests) then
-      path_tests = ""
-   end
-   path_tests = path_tests .. "ts/tests/"
-   local filetab = scandir(path_tests)
+   local filetab = scandir("ts/tests")
    local plantab = {}
    for _, v in ipairs(filetab) do
       if v:sub(-3) == ".ts" then
-         plantab[#plantab+1] = path_tests .. v
-      end 
+         plantab[#plantab+1] = "ts/tests/".. v
+      end
    end
    return plantab
 end
@@ -86,17 +84,25 @@ end
 
 local elapsed_time
 
-local function assert_count(filter, file, expected, dlt)
-   -- TODO: When new compiler handles test cases, bpf=false.
-   local pred = pf.compile_filter(filter, {dlt=dlt, bpf=true})
+local function assert_count(filter, file, pkt_expected)
+   local pkt_total = 0
+   local pkt_match = 0
+   local lapse = 0
+   local pass = false
+   local pred = pf.compile_filter(filter, {dlt='EN10MB', bpf=true})
+   local records = savefile.records_mm(file)
    local start = os.clock()
-   local actual, seen = pf.filter_count(pred, file)
-   elapsed_time = os.clock() - start
-   if actual == expected then
-       return "PASS", seen
-   else
-       return "FAIL (".. actual.. " != ".. expected .. ")", seen
+   while true do
+      local pkt, hdr = records()
+      if not pkt then break end
+      pkt_total = pkt_total + 1
+      if pred(pkt, hdr.incl_len) then
+         pkt_match = pkt_match + 1
+      end
    end
+   lapse = os.clock() - start
+   pass = pkt_match == pkt_expected
+   return pkt_total, pkt_match, lapse, pass
 end
 
 function run_test_plan(p)
@@ -114,13 +120,6 @@ function run_test_plan(p)
    -- show info about the plan
    print("enabled tests: " .. count .. " of " .. #plan)
 
-   -- works in tandem with pflua-bench
-   local path_pcaps = "../../../../src/"
-   if not dir_exist(path_pcaps) then
-      path_pcaps = ""
-   end
-   path_pcaps = path_pcaps .. "ts/pcaps/"
-
    -- execute test case
    for i, t in pairs(plan) do
       print("\nTest case running ...")
@@ -129,14 +128,19 @@ function run_test_plan(p)
       print("filter: " .. t['filter'])
       print("pcap_file: " .. t['pcap_file'])
       print("expected_result: " .. t['expected_result'])
-      local pass_str, pkt_total = assert_count(t['filter'], path_pcaps..t['pcap_file'], t['expected_result'], "EN10MB")
-      io.write("enabled: ")
+      local pkt_match = 0
+      local passed = false
+      local elapsed_time = 0
+      io.write("tc id " .. i)
       if t['enabled'] then
-         print("true")
-         print("tc id " .. i .. " " .. pass_str)
+         pkt_total, pkt_match, elapsed_time, passed = assert_count(t['filter'], "ts/pcaps/"..t['pcap_file'], t['expected_result'])
+         if passed then
+            print(" PASS")
+         else
+            print(" FAIL (" .. pkt_match .. " != " .. t['expected_result'] .. ")")
+         end
       else
-         print("false")
-         print("tc id " .. i .. " SKIP")
+         print(" SKIP")
       end
       print("tc id " .. i .. " ET " .. elapsed_time)
       print("tc id " .. i .. " TP " .. pkt_total)

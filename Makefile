@@ -1,14 +1,17 @@
-all: check_luajit check
-
-check_luajit:
-	@if [ ! -f ../pflua/deps/luajit/Makefile ]; then \
-	    echo "Can't find ../pflua/deps/luajit/. This code works in tandem with pflua code"; exit 1; \
-	fi
+all: check_submodules
+	$(MAKE) -C deps/pflua all
 
 check:
-	(cd src && $(MAKE) check)
+	$(MAKE) -C deps/pflua check
+	$(MAKE) -C src check
 
 clean:
-	(cd src; $(MAKE) clean)
+	$(MAKE) -C deps/pflua clean
+	$(MAKE) -C src clean
+
+check_submodules:
+	@if [ ! -f deps/pflua/Makefile ]; then \
+	    echo "Can't find deps/pflua/. You might need to: git submodule update --init"; exit 1; \
+	fi
 
 .SERIAL: all

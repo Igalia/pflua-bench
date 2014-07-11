@@ -5,9 +5,10 @@ package.path = package.path .. ";../deps/pflua/src/?.lua"
 local savefile = require("pf.savefile")
 local pf = require("pf")
 
-local capture, engine = ...
+local capture, engine, iterations = ...
 
-assert(engine, "usage: bench.lua PATH/TO/CAPTURE.PCAP ENGINE")
+assert(engine, "usage: bench.lua PATH/TO/CAPTURE.PCAP ENGINE [ITERATIONS]")
+iterations = tonumber(iterations) or 20
 
 local libpcap = require("pf.libpcap")
 local bpf = require("pf.bpf")
@@ -53,6 +54,7 @@ for line in io.lines(capture..'.tests') do
    table.insert(tests, test)
 end
 io.write('\n')
+io.flush()
 
 local function filter_time(pred, file, expected)
    local total_count = 0
@@ -81,8 +83,9 @@ end
 
 function run_tests(engine)
    run_filters(engine) -- Warmup
-   for i=1,10 do
+   for i=1,iterations do
       print(table.concat(run_filters(engine), '\t'))
+      io.flush()
    end
 end
 

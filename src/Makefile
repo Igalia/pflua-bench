@@ -21,4 +21,9 @@ csv-bpf-libpcap:
 csv-bpf-pflua:
 	luajit -l gen_dataset -e 'gen_dataset.run(5, "make test-bpf-pflua", "bpf-pflua.csv")'
 
+csv2:
+	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap libpcap | tee libpcap.csv
+	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap bpf | tee bpf.csv
+	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap pflua | tee pflua.csv
+
 clean:

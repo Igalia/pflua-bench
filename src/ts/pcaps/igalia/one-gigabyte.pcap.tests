@@ -1,0 +1,4 @@
+accept all: 1166716:
+ip: 1166716: ip
+tcp: 1166716: tcp
+tcp port 5555: 1166716: tcp port 5555

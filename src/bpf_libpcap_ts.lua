@@ -74,12 +74,23 @@ function get_all_tests(p)
    return plan
 end
 
+local function uncompress_if_necessary(filename)
+   local function file_exists(name)
+      local f = io.open(name, "r")
+      if f ~= nil then io.close(f) return true else return false end
+   end
+   if (not file_exists(filename)) then
+      os.execute("unxz "..filename..".xz")
+   end
+end
+
 local function assert_count(filter, file, pkt_expected)
    local pkt_total = 0
    local pkt_match = 0
    local lapse = 0
    local pass = false
    local f = libpcap.compile(filter, 'EN10MB')
+   uncompress_if_necessary(file)
    local records = savefile.records_mm(file)
    local start = os.clock()
    while true do

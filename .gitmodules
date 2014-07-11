@@ -1,3 +1,4 @@
 [submodule "src/deps/pflua"]
 	path = src/deps/pflua
 	url = https://github.com/Igalia/pflua
+        ignore = dirty

@@ -4,6 +4,7 @@ package.path = package.path .. ";../deps/pflua/src/?.lua"
 
 local savefile = require("pf.savefile")
 local pf = require("pf")
+local ffi = require("ffi")
 
 local capture, engine, iterations = ...
 
@@ -56,15 +57,47 @@ end
 io.write('\n')
 io.flush()
 
+function map_captured_packets(filename)
+   local fd = savefile.open(filename, O_RDONLY)
+   if fd == -1 then
+      error("Error opening " .. filename)
+   end
+
+   local size = savefile.size(fd)
+   local ptr = savefile.mmap(fd, size)
+   ffi.C.close(fd)
+
+   if ptr == ffi.cast("void *", -1) then
+      error("Error mmapping " .. filename)
+   end
+
+   ptr = ffi.cast("unsigned char *", ptr)
+   local ptr_end = ptr + size
+   local header = ffi.cast("struct pcap_file *", ptr)
+   if header.magic_number == 0xD4C3B2A1 then
+      error("Endian mismatch in " .. filename)
+   elseif header.magic_number ~= 0xA1B2C3D4 then
+      error("Bad PCAP magic number in " .. filename)
+   end
+   ptr = ptr + ffi.sizeof("struct pcap_file")
+   return ptr, ptr_end
+end
+
+local capture_start, capture_end = map_captured_packets(capture)
+
 local function filter_time(pred, file, expected)
    local total_count = 0
    local match_count = 0
    local start = os.clock()
-   for pkt, hdr in savefile.records_mm(file) do
-      total_count = total_count + 1
-      if pred(pkt, hdr, hdr.incl_len) then
+   local ptr = capture_start
+   while ptr < capture_end do
+      local record = ffi.cast("struct pcap_record *", ptr)
+      local packet = ffi.cast("unsigned char *", record + 1)
+      if pred(packet, record, record.incl_len) then
          match_count = match_count + 1
       end
+      total_count = total_count + 1
+      ptr = packet + record.incl_len
    end
    local lapse = os.clock() - start
    if match_count ~= expected then

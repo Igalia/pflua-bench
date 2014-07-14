@@ -1,0 +1,5 @@
+accept all: 961180:
+ip: 961180: ip
+tcp: 0: tcp
+tcp port 5555: 0: tcp port 5555
+icmp: 961180: icmp

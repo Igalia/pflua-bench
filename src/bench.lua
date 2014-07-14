@@ -17,6 +17,28 @@ local parse = require('pf.parse')
 local expand = require('pf.expand')
 local codegen = require('pf.codegen')
 
+ffi.cdef[[
+typedef long time_t;
+typedef uint32_t suseconds_t;
+struct timeval {
+  time_t      tv_sec;     /* seconds */
+  suseconds_t tv_usec;    /* microseconds */
+};
+int gettimeofday(struct timeval *tv, struct timezone *tz);
+]]
+
+local zero_sec, zero_usec
+
+local function now()
+   local tv = ffi.new("struct timeval")
+   assert(ffi.C.gettimeofday(tv, nil) == 0)
+   if not zero_sec then
+      zero_sec = tv.tv_sec
+      zero_usec = tv.tv_usec
+   end
+   return tonumber(tv.tv_sec - zero_sec) + (tv.tv_usec - zero_usec) * 1e-6
+end
+
 local function compile_filter(filter_str, opts)
    local opts = opts or {}
    local dlt = opts.dlt or "EN10MB"
@@ -88,7 +110,7 @@ local capture_start, capture_end = map_captured_packets(capture)
 local function filter_time(pred, file, expected)
    local total_count = 0
    local match_count = 0
-   local start = os.clock()
+   local start = now()
    local ptr = capture_start
    while ptr < capture_end do
       local record = ffi.cast("struct pcap_record *", ptr)
@@ -99,7 +121,7 @@ local function filter_time(pred, file, expected)
       total_count = total_count + 1
       ptr = packet + record.incl_len
    end
-   local lapse = os.clock() - start
+   local lapse = now() - start
    if match_count ~= expected then
       error("expected "..expected.." matching packets, but got "..match_count)
    end

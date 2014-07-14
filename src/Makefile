@@ -54,12 +54,12 @@ csv3:
 
 pflua-1gb-1kb-tcp-port-5555.png: check-png-deps csv2
 	~/src/guile-charting/examples/plot-data.scm \
-	  "Millions of packets/second, 1GB of 1kB packets on tcp port 5555" \
+	  "Millions of packets/second, 1GB of 1kB packets on TCP port 5555" \
 	  pflua-1gb-1kb-tcp-port-5555.png libpcap.csv bpf.csv pflua.csv
 
 pflua-ping-flood.png: check-png-deps csv3
 	~/src/guile-charting/examples/plot-data.scm \
-	  "Millions of packets/second, ping flood" \
+	  "Millions of packets/second, 60MB of ICMP pings" \
 	  pflua-ping-flood.png libpcap.csv bpf.csv pflua.csv
 
 graphs: pflua-1gb-1kb-tcp-port-5555.png

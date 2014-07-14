@@ -9,7 +9,7 @@ local ffi = require("ffi")
 local capture, engine, iterations = ...
 
 assert(engine, "usage: bench.lua PATH/TO/CAPTURE.PCAP ENGINE [ITERATIONS]")
-iterations = tonumber(iterations) or 20
+iterations = tonumber(iterations) or 50
 
 local libpcap = require("pf.libpcap")
 local bpf = require("pf.bpf")
@@ -103,7 +103,7 @@ local function filter_time(pred, file, expected)
    if match_count ~= expected then
       error("expected "..expected.." matching packets, but got "..match_count)
    end
-   return total_count / lapse
+   return total_count / lapse / 1e6
 end
 
 function run_filters(engine)

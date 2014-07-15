@@ -353,9 +353,9 @@ void load_bpf(struct bjk_bpf_info *info, char *bpf_string)
 
 void test_load_bpf(struct bjk_bpf_info *info)
 {
-   if((info->bpf_program[4].k == 65535) &&
-      (info->bpf_program[5].code == 6))
-      printf("test ok\n");
+   if((info->bpf_program[0].k == 65535) &&
+      (info->bpf_program[0].code == 6))
+      printf("test load bpf ok\n");
    else
       printf("test failed\n");
 }
@@ -368,9 +368,10 @@ void wrap_pkt_with_sk_buff(struct sk_buff *skb)
 
 int main()
 {
+   int success;
    // load bpf bytecode
-   char *test_str = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
-   //char *test_str = "1,6 0 0 65535";
+   //char *test_str = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
+   char *test_str = "1,6 0 0 65535";
    load_bpf(&info, test_str);
 
    // quick test
@@ -386,7 +387,11 @@ int main()
       show_error_and_die("main: kmalloc failing!");
 
    // jit run now
-   run_jit_filter(&info, skb);
+   success = run_jit_filter(&info, skb);
+   if (success != 0)
+      printf("match!\n");
+   else
+      printf("fail!\n");
 
    printf("OK\n");
    return 0;

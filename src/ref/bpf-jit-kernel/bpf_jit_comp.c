@@ -733,7 +733,8 @@ cond_branch:			f_offset = addrs[i + filter[i].jf] - addrs[i];
 				if (unlikely(proglen + ilen > oldproglen)) {
 					pr_err("bpb_jit_compile fatal error\n");
 					kfree(addrs);
-				module_free(NULL, header);
+				        //module_free(NULL, header);
+					kfree(header);
 					return;
 				}
 				memcpy(image + proglen, temp, ilen);

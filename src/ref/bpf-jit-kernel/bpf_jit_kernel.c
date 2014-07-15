@@ -100,22 +100,9 @@ void compile_jit_filter(struct bjk_bpf_info *info)
       show_error_and_die("compile_jit_filter: bpf: check failed: parse error");
 }
 
-/*
-
-   TODO: running example here
-
-   static bool bpf_mt(const struct sk_buff *skb, struct xt_action_param *par)
-   {
-      const struct xt_bpf_info *info = par->matchinfo;
-
-      return SK_RUN_FILTER(info->filter, skb);
-   }
-
-*/
-
 bool run_jit_filter(struct bjk_bpf_info *info, struct sk_buff *skb)
 {
-   return SK_RUN_FILTER(info->filter, NULL);
+   return SK_RUN_FILTER(info->filter, skb);
 }
 
 void load_bpf(struct bjk_bpf_info *info, char *bpf_string)
@@ -158,10 +145,6 @@ void load_bpf(struct bjk_bpf_info *info, char *bpf_string)
 		info->bpf_program_num_elem = bpf_len;
 }
 
-/* test should build on this iface */
-//void bpf_jit_compile(struct sk_filter *fp);
-//void bpf_jit_free(struct sk_filter *fp);
-
 void test_load_bpf(struct bjk_bpf_info *info)
 {
    if((info->bpf_program[4].k == 65535) &&
@@ -184,7 +167,10 @@ int main()
    compile_jit_filter(&info);
 
    // jit run now
-   run_jit_filter(&info, NULL);
+   struct sk_buff *skb = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
+   if (skb == NULL)
+      show_error_and_die("main: kmalloc failing!");
+   run_jit_filter(&info, skb);
 
    printf("OK\n");
    return 0;

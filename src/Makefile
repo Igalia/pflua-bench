@@ -13,13 +13,19 @@ test-bpf-libpcap:
 test-bpf-pflua:
 	luajit -l bpf_pflua_ts -e 'bpf_pflua_ts.run()'
 
-csv: csv-bpf-libpcap csv-bpf-pflua
+test-bpf-kernel:
+	luajit -l bpf_kernel_ts -e 'bpf_kernel_ts.run()'
+
+csv: csv-bpf-libpcap csv-bpf-pflua csv-bpf-kernel
 
 csv-bpf-libpcap:
 	luajit -l gen_dataset -e 'gen_dataset.run(5, "make test-bpf-libpcap", "bpf-libpcap.csv")'
 
 csv-bpf-pflua:
 	luajit -l gen_dataset -e 'gen_dataset.run(5, "make test-bpf-pflua", "bpf-pflua.csv")'
+
+csv-bpf-kernel:
+	luajit -l gen_dataset -e 'gen_dataset.run(5, "make test-bpf-kernel", "bpf-kernel.csv")'
 
 GUILE=guile
 

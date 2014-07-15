@@ -1,6 +1,20 @@
-all:
-	gcc -c hack.c -o hack.o
-	gcc -c bpf_jit.S -o bpf_jit.o
-	gcc -c bpf_jit_comp.c -o bpf_jit_comp.o
-	gcc -c bpf_jit_kernel.c -o bpf_jit_kernel.o
-	gcc -o bpf_jit_kernel bpf_jit_comp.o bpf_jit.o hack.o bpf_jit_kernel.o
+CC=gcc
+CFLAGS=
+
+all: rel
+
+dbg: CFLAGS += -g
+dbg: rel
+
+rel: bpf_jit_comp.o bpf_jit.o hack.o bpf_jit_kernel.o
+	$(CC) $(CFLAGS) -o bpf_jit_kernel $^
+
+pf_jit_comp.o: bpf_jit_comp.c
+bpf_jit.o: bpf_jit.S
+hack.o: hack.c hack.h
+bpf_jit_kernel.o: bpf_jit_kernel.c bpf_jit_kernel.h
+
+clean:
+	rm -rf *.o bpf_jit_kernel
+
+.PHONY: clean all

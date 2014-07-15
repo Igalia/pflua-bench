@@ -113,6 +113,11 @@ void compile_jit_filter(struct bjk_bpf_info *info)
 
 */
 
+bool run_jit_filter(struct bjk_bpf_info *info, struct sk_buff *skb)
+{
+   return SK_RUN_FILTER(info->filter, NULL);
+}
+
 void load_bpf(struct bjk_bpf_info *info, char *bpf_string)
 {
 	char sp, *token, separator = ',';
@@ -175,8 +180,11 @@ int main()
    // quick test
    test_load_bpf(&info);
 
-   // jit now
+   // jit compile now
    compile_jit_filter(&info);
+
+   // jit run now
+   run_jit_filter(&info, NULL);
 
    printf("OK\n");
    return 0;

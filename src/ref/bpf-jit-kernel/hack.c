@@ -24,12 +24,20 @@ void *bpf_internal_load_pointer_neg_helper(const struct sk_buff *skb, int k, uns
 
 void bpf_jit_dump(unsigned int flen, unsigned int proglen, u32 pass, void *image)
 {
-   /* TODO: clone dmesg dumping feature here
-   /*
+   int i;
    pr_err("flen=%u proglen=%u pass=%u image=%pK\n", flen, proglen, pass, image);
-   if (image)
-      print_hex_dump(KERN_ERR, "JIT code: ", DUMP_PREFIX_OFFSET, 16, 1, image, proglen, false);
-   */
+   //if (image)
+   //   print_hex_dump(KERN_ERR, "JIT code: ", DUMP_PREFIX_OFFSET, 16, 1, image, proglen, false);
+   if (image) {
+      for (i = 1; i < (proglen+1); i++)
+      {
+         printf("%02X ", ((unsigned char *)image)[i-1]);
+	 if (i%16 == 0)
+	    printf("\n");
+
+      }
+      printf("\n");
+   }
 }
 
 void * kmalloc(size_t size, int flags) {

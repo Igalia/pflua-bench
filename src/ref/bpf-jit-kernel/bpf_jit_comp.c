@@ -22,7 +22,7 @@
  * -8(RBP) : saved RBX value
  * -16(RBP)..-80(RBP) : BPF_MEMWORDS values
  */
-int bpf_jit_enable __read_mostly = 1;
+int bpf_jit_enable __read_mostly = 2;
 
 /*
  * assembly code in arch/x86/net/bpf_jit.S

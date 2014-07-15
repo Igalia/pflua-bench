@@ -3,7 +3,7 @@ CFLAGS=
 
 all: rel
 
-dbg: CFLAGS += -g
+dbg: CFLAGS += -g -DDBG
 dbg: rel
 
 rel: bpf_jit_comp.o bpf_jit.o hack.o bpf_jit_kernel.o

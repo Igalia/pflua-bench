@@ -4,14 +4,18 @@
 
 int skb_copy_bits(const struct sk_buff *skb, int offset, void *to, int len)
 {
+#ifdef DBG
    printf("skb_copy_bits here!\n");
    fflush(0);
+#endif
 }
 
 void *bpf_internal_load_pointer_neg_helper(const struct sk_buff *skb, int k, unsigned int size)
 {
+#ifdef DBG
    printf("bpf_internal_load_pointer_neg_helper here!\n");
    fflush(0);
+#endif
 }
 
 void bpf_jit_dump(unsigned int flen, unsigned int proglen, u32 pass, void *image)

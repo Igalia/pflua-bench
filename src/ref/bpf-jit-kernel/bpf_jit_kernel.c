@@ -369,12 +369,12 @@ void wrap_pkt_with_sk_buff(struct sk_buff *skb)
 int main()
 {
    // load bpf bytecode
-   //char *test_str = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
-   char *test_str = "1,6 0 0 65535";
+   char *test_str = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
+   //char *test_str = "1,6 0 0 65535";
    load_bpf(&info, test_str);
 
    // quick test
-   //test_load_bpf(&info);
+   test_load_bpf(&info);
 
    // jit compile now
    compile_jit_filter(&info);

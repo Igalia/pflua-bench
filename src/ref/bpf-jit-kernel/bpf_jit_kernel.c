@@ -3,6 +3,8 @@
 
 #include "hack.h"
 
+#include "bpf_jit_kernel.h"
+
 void show_error_and_die(char *e)
 {
    printf("%s stopping...", e);
@@ -83,6 +85,20 @@ int sk_unattached_filter_create(struct sk_filter **pfp, struct sock_fprog *fprog
    *pfp = fp;
    return 0;
 }
+
+/*
+
+   struct xt_bpf_info *info = par->matchinfo;
+   struct sock_fprog program;
+
+   program.len = info->bpf_program_num_elem;
+   program.filter = (struct sock_filter __user *) info->bpf_program;
+   if (sk_unattached_filter_create(&info->filter, &program)) {
+      pr_info("bpf: check failed: parse error\n");
+      return -EINVAL;
+   }
+
+*/
 
 /* test should build on this iface */
 //void bpf_jit_compile(struct sk_filter *fp);

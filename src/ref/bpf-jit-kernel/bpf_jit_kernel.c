@@ -5,9 +5,11 @@
 
 #include "bpf_jit_kernel.h"
 
+static struct bjk_bpf_info info;
+
 void show_error_and_die(char *e)
 {
-   printf("%s stopping...", e);
+   printf("%s stopping...\n", e);
    exit(-1);
 }
 
@@ -86,19 +88,18 @@ int sk_unattached_filter_create(struct sk_filter **pfp, struct sock_fprog *fprog
    return 0;
 }
 
-/*
-
-   TODO: jitting example here
-
-   struct xt_bpf_info *info = par->matchinfo;
+void compile_jit_filter(struct bjk_bpf_info *info)
+{
    struct sock_fprog program;
 
    program.len = info->bpf_program_num_elem;
    program.filter = (struct sock_filter __user *) info->bpf_program;
-   if (sk_unattached_filter_create(&info->filter, &program)) {
-      pr_info("bpf: check failed: parse error\n");
-      return -EINVAL;
-   }
+
+   if (sk_unattached_filter_create(&info->filter, &program))
+      show_error_and_die("compile_jit_filter: bpf: check failed: parse error");
+}
+
+/*
 
    TODO: running example here
 
@@ -111,12 +112,71 @@ int sk_unattached_filter_create(struct sk_filter **pfp, struct sock_fprog *fprog
 
 */
 
+void load_bpf(struct bjk_bpf_info *info, char *bpf_string)
+{
+	char sp, *token, separator = ',';
+	unsigned short bpf_len, i = 0;
+	struct sock_filter tmp;
+
+	info->bpf_program_num_elem = 0;
+	memset(info->bpf_program, 0, sizeof(info->bpf_program));
+
+	if (sscanf(bpf_string, "%hu%c", &bpf_len, &sp) != 2 ||
+	    sp != separator || bpf_len > BJK_BPF_MAX_NUM_INSTR || bpf_len == 0) {
+		show_error_and_die("cmd_load_bpf: syntax error in head length encoding!");
+	}
+
+	token = bpf_string;
+	while ((token = strchr(token, separator)) && (++token)[0]) {
+
+		if (i >= bpf_len)
+			show_error_and_die("cmd_load_bpf: program exceeds encoded length!");
+
+		if (sscanf(token, "%hu %hhu %hhu %u,", &tmp.code, &tmp.jt, &tmp.jf, &tmp.k) != 4) {
+			printf("cmd_load_bpf: syntax error at instruction %d!", i);
+			show_error_and_die("");
+
+		}
+
+		info->bpf_program[i].code = tmp.code;
+		info->bpf_program[i].jt = tmp.jt;
+		info->bpf_program[i].jf = tmp.jf;
+		info->bpf_program[i].k = tmp.k;
+
+		i++;
+	}
+
+	if (i != bpf_len)
+		show_error_and_die("cmd_load_bpf: syntax error exceeding encoded length!");
+	else
+		info->bpf_program_num_elem = bpf_len;
+}
+
 /* test should build on this iface */
 //void bpf_jit_compile(struct sk_filter *fp);
 //void bpf_jit_free(struct sk_filter *fp);
 
+void test_load_bpf(struct bjk_bpf_info *info)
+{
+   if((info->bpf_program[4].k == 65535) &&
+      (info->bpf_program[5].code == 6))
+      printf("test ok\n");
+   else
+      printf("test failed\n");
+}
+
 int main()
 {
-   printf("linking test\n");
+   // load bpf bytecode
+   char *test_str = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
+   load_bpf(&info, test_str);
+
+   // quick test
+   test_load_bpf(&info);
+
+   // jit now
+   compile_jit_filter(&info);
+
+   printf("OK\n");
    return 0;
 }

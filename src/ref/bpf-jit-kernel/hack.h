@@ -96,15 +96,18 @@ struct sock_filter_int {
 };
 
 struct sk_filter {
-        u32                     jited:1,        /* Is our filter JIT'ed? */
-		                len:31;         /* Number of filter blocks */
-        unsigned int            (*bpf_func)(const struct sk_buff *skb,
-                                            const struct sock_filter_int *filter);
-	union {
-	     struct sock_filter      insns[0];
-	     struct sock_filter_int  insnsi[0];
-	     //struct work_struct      work;
-	};
+   //atomic_t                refcnt;
+   u32                     jited:1,        /* Is our filter JIT'ed? */
+			   len:31;         /* Number of filter blocks */
+   struct sock_fprog_kern  *orig_prog;     /* Original BPF program */
+   //struct rcu_head         rcu;
+   unsigned int            (*bpf_func)(const struct sk_buff *skb,
+	                               const struct sock_filter_int *filter);
+   union {
+      struct sock_filter      insns[0];
+      struct sock_filter_int  insnsi[0];
+      //struct work_struct      work;
+   };
 };
 
 void * kmalloc(size_t size, int flags);

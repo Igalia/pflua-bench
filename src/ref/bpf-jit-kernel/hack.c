@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "hack.h"
 
 void *module_alloc(unsigned int sz)
@@ -31,7 +33,18 @@ void bpf_jit_dump(unsigned int flen, unsigned int proglen, u32 pass, void *image
 }
 
 void * kmalloc(size_t size, int flags) {
+   void *p;
+   if ((p = malloc(size)) == NULL) {
+      printf("kmalloc failing!\n");
+      exit(-1);
+   }
+   return p;
 }
 
-void kfree(const void *ptr) {
+void kfree(void *ptr) {
+   if (ptr == NULL) {
+      printf("kfree error!\n");
+      exit(-1);
+   } else
+      free(ptr);
 }

@@ -44,7 +44,7 @@ struct sk_filter *__sk_prepare_filter(struct sk_filter *fp /* , struct sock *sk*
       fp = __sk_migrate_filter(fp, sk);
    */
    if (!fp->jited)
-      show_error_and_die("__sk_prepare_filter: error jitting filter!\n");
+      show_error_and_die("__sk_prepare_filter: error jitting filter!");
 
    return fp;
 }
@@ -83,7 +83,8 @@ int sk_unattached_filter_create(struct sk_filter **pfp, struct sock_fprog *fprog
    fp = __sk_prepare_filter(fp);
    //if (IS_ERR(fp))
    //   return PTR_ERR(fp);
-   show_error_and_die("sk_unattached_filter_create: __sk_prepare_filter failed!\n");
+   if (fp == NULL)
+      show_error_and_die("sk_unattached_filter_create: __sk_prepare_filter failed!\n");
    *pfp = fp;
    return 0;
 }

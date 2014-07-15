@@ -28,6 +28,12 @@
    (void) (&_max1 == &_max2);        \
    _max1 > _max2 ? _max1 : _max2; })
 
+#define min(x, y) ({                 \
+   typeof(x) _min1 = (x);            \
+   typeof(y) _min2 = (y);            \
+   (void) (&_min1 == &_min2);        \
+   _min1 < _min2 ? _min1 : _min2; })
+
 #define unlikely
 #define __user
 
@@ -198,8 +204,8 @@ enum {
 	BPF_S_ANC_PAY_OFFSET,
 };
 
-void * kmalloc(size_t size, int flags);
-void kfree(const void *ptr);
+void *kmalloc(size_t size, int flags);
+void kfree(void *ptr);
 
 void bpf_jit_compile(struct sk_filter *fp);
 void bpf_jit_free(struct sk_filter *fp);

@@ -22,7 +22,7 @@
  * -8(RBP) : saved RBX value
  * -16(RBP)..-80(RBP) : BPF_MEMWORDS values
  */
-int bpf_jit_enable __read_mostly;
+int bpf_jit_enable __read_mostly = 1;
 
 /*
  * assembly code in arch/x86/net/bpf_jit.S
@@ -162,17 +162,20 @@ static struct bpf_binary_header *bpf_alloc_binary(unsigned int proglen,
 	 * 128 extra bytes to insert a random section of int3
 	 */
 	sz = round_up(proglen + sizeof(*header) + 128, PAGE_SIZE);
-//	header = module_alloc(sz);
+
+        //header = module_alloc(sz);
+	header = kmalloc(sz, GFP_KERNEL);
 	if (!header)
 		return NULL;
 
 	memset(header, 0xcc, sz); /* fill whole space with int3 instructions */
 
-//	header->pages = sz / PAGE_SIZE;
-//	hole = min(sz - (proglen + sizeof(*header)), PAGE_SIZE - sizeof(*header));
-//
-//	/* insert a random number of int3 instructions before BPF code */
-//	*image_ptr = &header->image[prandom_u32() % hole];
+        header->pages = sz / PAGE_SIZE;
+        hole = min(sz - (proglen + sizeof(*header)), PAGE_SIZE - sizeof(*header));
+
+	/* insert a random number of int3 instructions before BPF code */
+	//*image_ptr = &header->image[prandom_u32() % hole];
+	*image_ptr = &header->image[29371 % hole];
 	return header;
 }
 
@@ -214,7 +217,6 @@ void bpf_jit_compile(struct sk_filter *fp)
 		/* no prologue/epilogue for trivial filters (RET something) */
 		proglen = 0;
 		prog = temp;
-
 		if (seen_or_pass0) {
 			EMIT4(0x55, 0x48, 0x89, 0xe5); /* push %rbp; mov %rsp,%rbp */
 			EMIT4(0x48, 0x83, 0xec, 96);	/* subq  $96,%rsp	*/
@@ -257,7 +259,6 @@ void bpf_jit_compile(struct sk_filter *fp)
 				}
 			}
 		}
-
 		switch (filter[0].code) {
 		case BPF_S_RET_K:
 		case BPF_S_LD_W_LEN:

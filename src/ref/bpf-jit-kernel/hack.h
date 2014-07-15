@@ -13,6 +13,7 @@
 
 #define SKF_LL_OFF    (-0x200000)
 
+#define ENOMEM 12
 #define EINVAL 22
 
 #define __read_mostly

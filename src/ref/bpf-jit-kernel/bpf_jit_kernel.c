@@ -154,22 +154,32 @@ void test_load_bpf(struct bjk_bpf_info *info)
       printf("test failed\n");
 }
 
+void wrap_pkt_with_sk_buff(struct sk_buff *skb)
+{
+   skb->data_len = 10;
+   skb->data = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
+}
+
 int main()
 {
    // load bpf bytecode
-   char *test_str = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
+   //char *test_str = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
+   char *test_str = "1,6 0 0 65535";
    load_bpf(&info, test_str);
 
    // quick test
-   test_load_bpf(&info);
+   //test_load_bpf(&info);
 
    // jit compile now
    compile_jit_filter(&info);
 
-   // jit run now
+   // wrap with sk_buff
    struct sk_buff *skb = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
+   wrap_pkt_with_sk_buff(skb);
    if (skb == NULL)
       show_error_and_die("main: kmalloc failing!");
+
+   // jit run now
    run_jit_filter(&info, skb);
 
    printf("OK\n");

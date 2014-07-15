@@ -88,6 +88,8 @@ int sk_unattached_filter_create(struct sk_filter **pfp, struct sock_fprog *fprog
 
 /*
 
+   TODO: jitting example here
+
    struct xt_bpf_info *info = par->matchinfo;
    struct sock_fprog program;
 
@@ -96,6 +98,15 @@ int sk_unattached_filter_create(struct sk_filter **pfp, struct sock_fprog *fprog
    if (sk_unattached_filter_create(&info->filter, &program)) {
       pr_info("bpf: check failed: parse error\n");
       return -EINVAL;
+   }
+
+   TODO: running example here
+
+   static bool bpf_mt(const struct sk_buff *skb, struct xt_action_param *par)
+   {
+      const struct xt_bpf_info *info = par->matchinfo;
+
+      return SK_RUN_FILTER(info->filter, skb);
    }
 
 */

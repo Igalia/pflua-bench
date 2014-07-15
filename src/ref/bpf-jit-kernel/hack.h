@@ -32,6 +32,7 @@
 #define __user
 
 #define sk_filter_proglen(fprog) (fprog->len * sizeof(fprog->filter[0]))
+#define SK_RUN_FILTER(filter, ctx) (*filter->bpf_func)(ctx, filter->insnsi)
 
 typedef signed char s8;
 typedef unsigned char u8;

@@ -22,7 +22,16 @@
 #define __round_mask(x, y) ((__typeof__(x))((y)-1))
 #define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
 
+#define max(x, y) ({                 \
+   typeof(x) _max1 = (x);            \
+   typeof(y) _max2 = (y);            \
+   (void) (&_max1 == &_max2);        \
+   _max1 > _max2 ? _max1 : _max2; })
+
 #define unlikely
+#define __user
+
+#define sk_filter_proglen(fprog) (fprog->len * sizeof(fprog->filter[0]))
 
 typedef signed char s8;
 typedef unsigned char u8;
@@ -95,6 +104,11 @@ struct sock_filter_int {
    s32   imm;            /* signed immediate constant */
 };
 
+struct sock_fprog {      /* Required for SO_ATTACH_FILTER. */
+   unsigned short len;   /* Number of filter blocks */
+   struct sock_filter __user *filter;
+};
+
 struct sk_filter {
    //atomic_t                refcnt;
    u32                     jited:1,        /* Is our filter JIT'ed? */
@@ -110,8 +124,11 @@ struct sk_filter {
    };
 };
 
-void * kmalloc(size_t size, int flags);
-void kfree(const void *ptr);
+static inline unsigned int sk_filter_size(unsigned int proglen)
+{
+   return max(sizeof(struct sk_filter),
+	      offsetof(struct sk_filter, insns[proglen]));
+}
 
 enum {
 	BPF_S_RET_K = 1,
@@ -179,6 +196,9 @@ enum {
 	BPF_S_ANC_VLAN_TAG_PRESENT,
 	BPF_S_ANC_PAY_OFFSET,
 };
+
+void * kmalloc(size_t size, int flags);
+void kfree(const void *ptr);
 
 void bpf_jit_compile(struct sk_filter *fp);
 void bpf_jit_free(struct sk_filter *fp);

@@ -18,6 +18,13 @@
 #define SKBDATA	%r8
 #define SKF_MAX_NEG_OFF    $(-0x200000) /* SKF_LL_OFF from filter.h */
 
+        .globl  _skb_copy_bits
+	.globl  _bpf_internal_load_pointer_neg_helper
+	.data
+	.comm   _skb_copy_bits,8,8
+	.comm   _bpf_internal_load_pointer_neg_helper,8,8
+        .section .rodata
+
 sk_load_word:
 	.globl	sk_load_word
 
@@ -32,7 +39,7 @@ sk_load_word_positive_offset:
 	cmp	$3,%eax
 	jle	bpf_slow_path_word
 	mov     (SKBDATA,%rsi),%eax
-	bswap   %eax  			/* ntohl() */
+	bswap   %eax			/* ntohl() */
 	ret
 
 sk_load_half:
@@ -95,7 +102,9 @@ sk_load_byte_msh_positive_offset:
 /* rsi already has offset */			\
 	mov	$LEN,%ecx;	/* len */	\
 	lea	-12(%rbp),%rdx;			\
-	call	skb_copy_bits;			\
+	//call	skb_copy_bits;			\
+	movq    _skb_copy_bits(%rip),%eax;      \
+	call    %eax;                           \
 	test    %eax,%eax;			\
 	pop	SKBDATA;			\
 	pop	%r9;				\
@@ -133,17 +142,19 @@ bpf_slow_path_byte_msh:
 	xchg	%eax,%ebx
 	ret
 
-#define sk_negative_common(SIZE)				\
-	push	%rdi;	/* save skb */				\
-	push	%r9;						\
-	push	SKBDATA;					\
-/* rsi already has offset */					\
-	mov	$SIZE,%edx;	/* size */			\
-	call	bpf_internal_load_pointer_neg_helper;		\
-	test	%rax,%rax;					\
-	pop	SKBDATA;					\
-	pop	%r9;						\
-	pop	%rdi;						\
+#define sk_negative_common(SIZE)				  \
+	push	%rdi;	/* save skb */				  \
+	push	%r9;						  \
+	push	SKBDATA;					  \
+/* rsi already has offset */					  \
+	mov	$SIZE,%edx;	/* size */			  \
+	//call	bpf_internal_load_pointer_neg_helper;		  \
+	movq    _bpf_internal_load_pointer_neg_helper(%rip),%eax; \
+	call    %eax;                                             \
+	test	%rax,%rax;					  \
+	pop	SKBDATA;					  \
+	pop	%r9;						  \
+	pop	%rdi;						  \
 	jz	bpf_error
 
 

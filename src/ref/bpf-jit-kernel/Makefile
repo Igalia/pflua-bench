@@ -1,20 +1,24 @@
-CC=gcc
+CC= gcc
 CFLAGS=
+
+OBJECTS= bpf_jit_comp.o bpf_jit.o hack.o bpf_jit_kernel.o
 
 all: rel
 
 dbg: CFLAGS += -g -DDBG
 dbg: rel
 
-rel: bpf_jit_comp.o bpf_jit.o hack.o bpf_jit_kernel.o
+rel: $(OBJECTS)
 	$(CC) $(CFLAGS) -o bpf_jit_kernel $^
 
-pf_jit_comp.o: bpf_jit_comp.c
-bpf_jit.o: bpf_jit.S
-hack.o: hack.c hack.h
-bpf_jit_kernel.o: bpf_jit_kernel.c bpf_jit_kernel.h
+lib: CFLAGS += -fPIC
+lib: $(OBJECTS)
+	$(CC) -shared $(CFLAGS) -o libbpf_jit_kernel.so.1.0.0 -Wl,-soname,libbpf_jit_kernel.so.1 $(OBJECTS) -lc
+
+%.o: %.c
+	gcc -c -o $@ $< $(CFLAGS)
 
 clean:
-	rm -rf *.o bpf_jit_kernel
+	rm -rf *.o bpf_jit_kernel libbpf_jit_kernel.so.1.0.0
 
 .PHONY: clean all

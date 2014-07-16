@@ -2,6 +2,9 @@
 
 #include "hack.h"
 
+extern _skb_copy_bits;
+extern _bpf_internal_load_pointer_neg_helper;
+
 int skb_copy_bits(const struct sk_buff *skb, int offset, void *to, int len)
 {
 #ifdef DBG
@@ -53,4 +56,9 @@ void kfree(void *ptr) {
       exit(-1);
    } else
       free(ptr);
+}
+
+void fix_indirect_jumps() {
+   _skb_copy_bits = (unsigned long)skb_copy_bits;
+   _bpf_internal_load_pointer_neg_helper = (unsigned long)bpf_internal_load_pointer_neg_helper;
 }

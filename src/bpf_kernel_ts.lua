@@ -5,6 +5,30 @@ package.path = package.path .. ";../deps/pflua/src/?.lua"
 local savefile = require("pf.savefile")
 local libpcap = require("pf.libpcap")
 
+local ffi = require("ffi")
+
+ffi.cdef[[
+typedef int (*offline_filter_t)(char *f, uint32_t pkt_len, const uint8_t *pkt);
+void *dlopen(const char *filename, int flag);
+void *dlsym(void *handle, const char *symbol);
+char *dlerror(void);
+]]
+
+local lib_handle
+
+-- int (*offline_filter)(char *f, uint32_t pkt_len, const uint8_t *pkt);
+local kernel_offline_filter
+
+function load_dyn_funcs()
+   local RTLD_LAZY = 0x0001
+   lib_handle = ffi.C.dlopen("./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0", RTLD_LAZY)
+   if lib_handle == nil then
+      print(ffi.C.dlerror())
+      os.exit(-1)
+   end
+   kernel_offline_filter = ffi.cast("offline_filter_t", ffi.C.dlsym(lib_handle, "offline_filter"));
+end
+
 --[[
 There is no directory listing function in Lua as
 it's a compact language. Maybe we could use lfs but
@@ -93,7 +117,7 @@ function convert_filter_to_dec_numbers(str)
       line = line:sub(1,#line-1)
       io.close()
    end
-   return line
+   return ffi.new("char[?]", #line, line)
 end
 
 local function assert_count(filter, file, pkt_expected)
@@ -113,6 +137,7 @@ local function assert_count(filter, file, pkt_expected)
       --if libpcap.offline_filter(f, hdr, pkt) ~= 0 then
       --   pkt_match = pkt_match + 1
       --end
+      kernel_offline_filter(f, 0, nil)
    end
    lapse = os.clock() - start
    pass = pkt_match == pkt_expected
@@ -173,6 +198,7 @@ function run_test_plan(p)
 end
 
 function run()
+   load_dyn_funcs()
    local plantab = get_all_plans()
    for _, p in ipairs(plantab) do
       print("\n[*] Running test plan: ".. p .. "\n")

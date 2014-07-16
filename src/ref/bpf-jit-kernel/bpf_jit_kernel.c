@@ -369,7 +369,7 @@ void wrap_pkt_with_sk_buff(struct sk_buff *skb)
 
 int offline_filter(char *f, uint32_t pkt_len, const uint8_t *pkt)
 {
-   printf("Working!\n");
+   printf("%s\n", f);
 }
 
 int main()

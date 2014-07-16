@@ -14,11 +14,12 @@ rel: $(OBJECTS)
 lib: CFLAGS += -fPIC
 lib: $(OBJECTS)
 	$(CC) -shared $(CFLAGS) -o libbpf_jit_kernel.so.1.0.0 -Wl,-soname,libbpf_jit_kernel.so.1 $(OBJECTS) -lc
+	$(CC) $(CFLAGS) -o test_lib test_lib.c -ldl
 
 %.o: %.c
 	gcc -c -o $@ $< $(CFLAGS)
 
 clean:
-	rm -rf *.o bpf_jit_kernel libbpf_jit_kernel.so.1.0.0
+	rm -rf *.o bpf_jit_kernel libbpf_jit_kernel.so.1.0.0 test_lib
 
 .PHONY: clean all

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "hack.h"
 
@@ -364,6 +365,11 @@ void wrap_pkt_with_sk_buff(struct sk_buff *skb)
 {
    skb->data_len = 10;
    skb->data = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
+}
+
+int offline_filter(char *f, uint32_t pkt_len, const uint8_t *pkt)
+{
+   printf("Working!\n");
 }
 
 int main()

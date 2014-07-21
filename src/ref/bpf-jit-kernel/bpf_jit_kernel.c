@@ -289,6 +289,7 @@ int sk_unattached_filter_create(struct sk_filter **pfp, struct sock_fprog *fprog
     */
    //fp = __sk_prepare_filter(fp, NULL);
    fp = __sk_prepare_filter(fp);
+
    //if (IS_ERR(fp))
    //   return PTR_ERR(fp);
    if (fp == NULL)

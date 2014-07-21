@@ -174,11 +174,15 @@ static struct bpf_binary_header *bpf_alloc_binary(unsigned int proglen,
 	sz = round_up(proglen + sizeof(*header) + 128, PAGE_SIZE);
 
         //header = module_alloc(sz);
-	header = kmalloc(sz, GFP_KERNEL);
-	if (!header)
-		return NULL;
+	header = (struct bpf_binary_header *)memalign(PAGE_SIZE, sz);
+        if (header == NULL) {
+           handle_error("bpf_jit_comp.c: memalign");
+	}
 
-	memset(header, 0xcc, sz); /* fill whole space with int3 instructions */
+	if (mprotect(header, sz, PROT_READ|PROT_WRITE|PROT_EXEC) != 0)
+	   handle_error("bpf_jit_comp.c: mprotect");
+
+        memset(header, 0xcc, sz); /* fill whole space with int3 instructions */
 
         header->pages = sz / PAGE_SIZE;
         hole = min(sz - (proglen + sizeof(*header)), PAGE_SIZE - sizeof(*header));
@@ -191,7 +195,6 @@ static struct bpf_binary_header *bpf_alloc_binary(unsigned int proglen,
 
 void bpf_jit_compile(struct sk_filter *fp)
 {
-        int pagesize;
 	u8 temp[64];
 	u8 *prog;
 	unsigned int proglen, oldproglen = 0;
@@ -210,17 +213,12 @@ void bpf_jit_compile(struct sk_filter *fp)
 	if (!bpf_jit_enable)
 		return;
 
-	pagesize = sysconf(_SC_PAGE_SIZE);
-	if (pagesize == -1)
-	   handle_error("bpf_jit_comp.c: sysconf");
-
-	addrs = (unsigned int *)memalign(pagesize, flen*sizeof(*addrs));
-        if (addrs == NULL) {
-           handle_error("bpf_jit_comp.c: memalign");
-	}
-
-	if (mprotect(addrs, flen*sizeof(*addrs), PROT_READ|PROT_WRITE|PROT_EXEC) != 0)
-	   handle_error("bpf_jit_comp.c: mprotect");
+	addrs = kmalloc(flen * sizeof(*addrs), GFP_KERNEL);
+	if (addrs == NULL)
+        {
+	   printf("bpf_jit_comp.c: bpf_jit_compile kmalloc error!\n");
+	   exit(-1);
+        }
 
 	/* Before first pass, make a rough estimation of addrs[]
 	 * each bpf instruction is translated to less than 64 bytes
@@ -780,6 +778,8 @@ cond_branch:			f_offset = addrs[i + filter[i].jf] - addrs[i];
 			header = bpf_alloc_binary(proglen, &image);
 			if (!header)
 				goto out;
+			/* XXX */
+			kfree(header);
 		}
 		oldproglen = proglen;
 	}

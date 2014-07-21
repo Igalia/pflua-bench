@@ -137,7 +137,9 @@ local function assert_count(filter, file, pkt_expected)
       --if libpcap.offline_filter(f, hdr, pkt) ~= 0 then
       --   pkt_match = pkt_match + 1
       --end
-      kernel_offline_filter(f, 0, nil)
+      if kernel_offline_filter(f, hdr.incl_len, pkt) ~= 0 then
+	 pkt_match = pkt_match + 1
+      end
    end
    lapse = os.clock() - start
    pass = pkt_match == pkt_expected

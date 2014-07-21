@@ -308,6 +308,12 @@ void compile_jit_filter(struct bjk_bpf_info *info)
       show_error_and_die("compile_jit_filter: bpf: check failed: parse error");
 }
 
+void uncompile_jit_filter(struct bjk_bpf_info *info)
+{
+   /* cleanup happens here */
+   kfree(*(&info->filter));
+}
+
 bool run_jit_filter(struct bjk_bpf_info *info, struct sk_buff *skb)
 {
    return SK_RUN_FILTER(info->filter, skb);
@@ -370,6 +376,8 @@ void wrap_pkt_with_sk_buff(struct sk_buff *skb)
 
 int offline_filter(char *f, uint32_t pkt_len, const uint8_t *pkt)
 {
+   int success;
+
    /* empty filter always match */
    if (f == NULL)
       return 1;
@@ -381,11 +389,17 @@ int offline_filter(char *f, uint32_t pkt_len, const uint8_t *pkt)
    compile_jit_filter(&info);
    skb->data_len = pkt_len;
    skb->data = (uint8_t *)pkt;
-   return run_jit_filter(&info, skb);
+   success = run_jit_filter(&info, skb);
+   uncompile_jit_filter(&info);
+   return success;
 }
 
 __attribute__((constructor)) void init(void) {
    skb = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
+}
+
+__attribute__((destructor)) void end(void) {
+   kfree(skb);
 }
 
 int main()

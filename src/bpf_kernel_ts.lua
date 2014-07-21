@@ -24,6 +24,8 @@ function load_dyn_funcs()
    lib_handle = ffi.C.dlopen("./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0", RTLD_LAZY)
    if lib_handle == nil then
       print(ffi.C.dlerror())
+      print("did you compile .so library? it should be at ./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0 ...")
+      print("try 'make -C ref/bpf-jit-kernel lib'")
       os.exit(-1)
    end
    kernel_offline_filter = ffi.cast("offline_filter_t", ffi.C.dlsym(lib_handle, "offline_filter"));

@@ -212,11 +212,11 @@ void bpf_jit_compile(struct sk_filter *fp)
 
 	pagesize = sysconf(_SC_PAGE_SIZE);
 	if (pagesize == -1)
-	   handle_error("sysconf");
+	   handle_error("bpf_jit_comp.c: sysconf");
 
 	addrs = (unsigned int *)memalign(pagesize, flen*sizeof(*addrs));
         if (addrs == NULL) {
-           handle_error("memalign");
+           handle_error("bpf_jit_comp.c: memalign");
 	}
 
 	if (mprotect(addrs, flen*sizeof(*addrs), PROT_READ|PROT_WRITE|PROT_EXEC) != 0)

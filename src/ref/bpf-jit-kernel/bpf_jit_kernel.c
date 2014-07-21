@@ -374,6 +374,11 @@ void wrap_pkt_with_sk_buff(struct sk_buff *skb)
    skb->data = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
 }
 
+void unwrap_pkt_with_sk_buff(struct sk_buff *skb)
+{
+   kfree(skb->data);
+}
+
 int offline_filter(char *f, uint32_t pkt_len, const uint8_t *pkt)
 {
    int success;
@@ -417,7 +422,6 @@ int main()
    compile_jit_filter(&info);
 
    // wrap with sk_buff
-   struct sk_buff *skb = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
    wrap_pkt_with_sk_buff(skb);
    if (skb == NULL)
       show_error_and_die("main: kmalloc failing!");
@@ -428,6 +432,9 @@ int main()
       printf("match!\n");
    else
       printf("fail!\n");
+
+   // unwrap skb's data
+   unwrap_pkt_with_sk_buff(skb);
 
    printf("OK\n");
    return 0;

@@ -7,6 +7,7 @@
 #include "bpf_jit_kernel.h"
 
 static struct bjk_bpf_info info;
+struct sk_buff *skb;
 
 void show_error_and_die(char *e)
 {
@@ -369,7 +370,22 @@ void wrap_pkt_with_sk_buff(struct sk_buff *skb)
 
 int offline_filter(char *f, uint32_t pkt_len, const uint8_t *pkt)
 {
-   printf("%s\n", f);
+   /* empty filter always match */
+   if (f == NULL)
+      return 1;
+   /* empty packet never match minimum filter */
+   if ((pkt_len == 0) || (pkt == NULL))
+      return 0;
+
+   load_bpf(&info, f);
+   compile_jit_filter(&info);
+   skb->data_len = pkt_len;
+   skb->data = (uint8_t *)pkt;
+   return run_jit_filter(&info, skb);
+}
+
+__attribute__((constructor)) void init(void) {
+   skb = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
 }
 
 int main()

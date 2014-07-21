@@ -8,7 +8,13 @@
  * of the License.
  */
 
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/mman.h>
 #include "hack.h"
+
+#define handle_error(msg) \
+   do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
 /*
  * Conventions :
@@ -185,6 +191,7 @@ static struct bpf_binary_header *bpf_alloc_binary(unsigned int proglen,
 
 void bpf_jit_compile(struct sk_filter *fp)
 {
+        int pagesize;
 	u8 temp[64];
 	u8 *prog;
 	unsigned int proglen, oldproglen = 0;
@@ -203,9 +210,17 @@ void bpf_jit_compile(struct sk_filter *fp)
 	if (!bpf_jit_enable)
 		return;
 
-	addrs = kmalloc(flen * sizeof(*addrs), GFP_KERNEL);
-	if (addrs == NULL)
-		return;
+	pagesize = sysconf(_SC_PAGE_SIZE);
+	if (pagesize == -1)
+	   handle_error("sysconf");
+
+	addrs = (unsigned int *)memalign(pagesize, flen*sizeof(*addrs));
+        if (addrs == NULL) {
+           handle_error("memalign");
+	}
+
+	if (mprotect(addrs, flen*sizeof(*addrs), PROT_READ|PROT_WRITE|PROT_EXEC) != 0)
+	   handle_error("bpf_jit_comp.c: mprotect");
 
 	/* Before first pass, make a rough estimation of addrs[]
 	 * each bpf instruction is translated to less than 64 bytes

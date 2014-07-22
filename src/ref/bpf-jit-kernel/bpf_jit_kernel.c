@@ -372,7 +372,9 @@ void test_load_bpf(struct bjk_bpf_info *info)
 
 void wrap_pkt_with_sk_buff(struct sk_buff *skb)
 {
-   skb->data_len = 10;
+   /* quick test data */
+   skb->len = 10;
+   skb->data_len = 0;
    skb->data = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
 }
 
@@ -402,8 +404,19 @@ int run_filter_on_packet(uint32_t pkt_len, const uint8_t *pkt)
    /* empty packet never match minimum filter */
    if ((pkt_len == 0) || (pkt == NULL))
       return 0;
-   /* set up skb buffer to talk kernel jargon */
-   skb->data_len = pkt_len;
+   /* there are actually two length variables associated with an skb, len and
+    * data_len. The latter only comes into play when there is paged data in the
+    * skb. skb->data_len tells how many bytes of paged data there are in the
+    * skb. From this we can derive a few more things:
+    * - The existence of paged data in an skb is indicated by skb->data_len
+    *   being non-zero. This is codified in the helper routine
+    *   skb_is_nonlinear()
+    * - The amount of non-paged data at skb->data can be calculated as
+    *   skb->len - skb->data_len. Again, there is a helper routine already
+    *   defined for this called skb_headlen()
+    */
+   skb->data_len = 0;
+   skb->len = pkt_len;
    skb->data = (uint8_t *)pkt;
    success = run_jit_filter(&info, skb);
    /* success != 0 => match */

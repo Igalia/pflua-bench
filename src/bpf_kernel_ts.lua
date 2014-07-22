@@ -8,7 +8,8 @@ local libpcap = require("pf.libpcap")
 local ffi = require("ffi")
 
 ffi.cdef[[
-typedef int (*offline_filter_t)(char *f, uint32_t pkt_len, const uint8_t *pkt);
+typedef void (*compile_filter_t)(char *f);
+typedef int (*run_filter_on_packet_t)(uint32_t pkt_len, const uint8_t *pkt);
 void *dlopen(const char *filename, int flag);
 void *dlsym(void *handle, const char *symbol);
 char *dlerror(void);
@@ -16,8 +17,10 @@ char *dlerror(void);
 
 local lib_handle
 
--- int (*offline_filter)(char *f, uint32_t pkt_len, const uint8_t *pkt);
-local kernel_offline_filter
+-- void compile_filter(char *f);
+local kernel_compile_filter
+-- int run_filter_on_packet(uint32_t pkt_len, const uint8_t *pkt);
+local kernel_run_filter_on_packet
 
 function load_dyn_funcs()
    local RTLD_LAZY = 0x0001
@@ -28,7 +31,8 @@ function load_dyn_funcs()
       print("try 'make -C ref/bpf-jit-kernel lib'")
       os.exit(-1)
    end
-   kernel_offline_filter = ffi.cast("offline_filter_t", ffi.C.dlsym(lib_handle, "offline_filter"));
+   kernel_compile_filter = ffi.cast("compile_filter_t", ffi.C.dlsym(lib_handle, "compile_filter"));
+   kernel_run_filter_on_packet = ffi.cast("run_filter_on_packet_t", ffi.C.dlsym(lib_handle, "run_filter_on_packet"));
 end
 
 --[[
@@ -128,6 +132,8 @@ local function assert_count(filter, file, pkt_expected)
    local lapse = 0
    local pass = false
    local f = convert_filter_to_dec_numbers(filter)
+   -- set default kernel filter
+   kernel_compile_filter(f)
    uncompress_if_necessary(file)
    local records = savefile.records_mm(file)
    local start = os.clock()
@@ -135,11 +141,8 @@ local function assert_count(filter, file, pkt_expected)
       local pkt, hdr = records()
       if not pkt then break end
       pkt_total = pkt_total + 1
-      -- TODO: kernel.offline_filter here!
-      --if libpcap.offline_filter(f, hdr, pkt) ~= 0 then
-      --   pkt_match = pkt_match + 1
-      --end
-      if kernel_offline_filter(f, hdr.incl_len, pkt) ~= 0 then
+      -- run default kernel filter
+      if kernel_run_filter_on_packet(hdr.incl_len, pkt) ~= 0 then
 	 pkt_match = pkt_match + 1
       end
    end

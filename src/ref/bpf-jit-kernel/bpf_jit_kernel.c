@@ -312,7 +312,8 @@ void compile_jit_filter(struct bjk_bpf_info *info)
 void uncompile_jit_filter(struct bjk_bpf_info *info)
 {
    /* cleanup happens here */
-   kfree(*(&info->filter));
+   if (*(&info->filter) != NULL)
+      kfree(*(&info->filter));
 }
 
 bool run_jit_filter(struct bjk_bpf_info *info, struct sk_buff *skb)
@@ -380,28 +381,38 @@ void unwrap_pkt_with_sk_buff(struct sk_buff *skb)
    kfree(skb->data);
 }
 
-int offline_filter(char *f, uint32_t pkt_len, const uint8_t *pkt)
+void compile_filter(char *f)
+{
+   /* uncompile if needed */
+   uncompile_jit_filter(&info);
+   /* empty filter supported */
+   if (f == NULL)
+      return;
+   /* set up and compile filter */
+   load_bpf(&info, f);
+   compile_jit_filter(&info);
+}
+
+int run_filter_on_packet(uint32_t pkt_len, const uint8_t *pkt)
 {
    int success;
-
    /* empty filter always match */
-   if (f == NULL)
+   if (info.filter == NULL)
       return 1;
    /* empty packet never match minimum filter */
    if ((pkt_len == 0) || (pkt == NULL))
       return 0;
-
-   load_bpf(&info, f);
-   compile_jit_filter(&info);
+   /* set up skb buffer to talk kernel jargon */
    skb->data_len = pkt_len;
    skb->data = (uint8_t *)pkt;
    success = run_jit_filter(&info, skb);
-   uncompile_jit_filter(&info);
+   /* success != 0 => match */
    return success;
 }
 
 __attribute__((constructor)) void init(void) {
    skb = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
+   info.filter = NULL;
 }
 
 __attribute__((destructor)) void end(void) {

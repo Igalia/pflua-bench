@@ -116,13 +116,11 @@ end
 
 function convert_filter_to_dec_numbers(str)
    local line = ""
-   if str ~= nil then
-      local cmd = "/usr/sbin/tcpdump -ddd -r ts/pcaps/igalia/empty.pcap " .. str .. " 2> /dev/null | tr '\n' ','"
-      local io = assert(io.popen(cmd, 'r'))
-      line = io:read()
-      line = line:sub(1,#line-1)
-      io.close()
-   end
+   local cmd = "/usr/sbin/tcpdump -ddd -r ts/pcaps/igalia/empty.pcap " .. str .. " 2> /dev/null | tr '\n' ','"
+   local io = assert(io.popen(cmd, 'r'))
+   line = io:read()
+   line = line:sub(1,#line-1)
+   io.close()
    return ffi.new("char[?]", #line, line)
 end
 

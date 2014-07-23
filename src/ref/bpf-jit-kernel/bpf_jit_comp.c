@@ -778,8 +778,6 @@ cond_branch:			f_offset = addrs[i + filter[i].jf] - addrs[i];
 			header = bpf_alloc_binary(proglen, &image);
 			if (!header)
 				goto out;
-			/* XXX */
-			kfree(header);
 		}
 		oldproglen = proglen;
 	}

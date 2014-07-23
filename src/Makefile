@@ -5,7 +5,7 @@ all: check test-all
 check:
 	luajit -e 'print("check passed!")'
 
-test: test-bpf-libpcap test-bpf-pflua
+test: test-bpf-libpcap test-bpf-pflua test-bpf-kernel
 
 test-bpf-libpcap:
 	luajit -l bpf_libpcap_ts -e 'bpf_libpcap_ts.run()'

@@ -312,8 +312,10 @@ void compile_jit_filter(struct bjk_bpf_info *info)
 void uncompile_jit_filter(struct bjk_bpf_info *info)
 {
    /* cleanup happens here */
+   /*
    if (*(&info->filter) != NULL)
       kfree(*(&info->filter));
+   */
 }
 
 bool run_jit_filter(struct bjk_bpf_info *info, struct sk_buff *skb)

@@ -6,9 +6,9 @@
 #define TEST_PKT_LEN 1
 
 int main() {
-   //char *filter = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
+   char *filter = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
    //char *filter = "4,40 0 0 12,21 0 1 2048,6 0 0 65535,6 0 0 0";
-   char *filter = "1,6 0 0 65535";
+   //char *filter = "1,6 0 0 65535";
    void (*compile_filter)(char *f);
    int  (*run_filter_on_packet)(uint32_t pkt_len, const uint8_t *pkt);
    char *error;

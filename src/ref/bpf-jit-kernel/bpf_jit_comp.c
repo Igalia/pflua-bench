@@ -16,6 +16,10 @@
 #define handle_error(msg) \
    do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
+#define FILTER_HM_SIZE PAGE_SIZE*2
+
+u8 filter_hm[FILTER_HM_SIZE] __attribute__ ((aligned (PAGE_SIZE)));
+
 /*
  * Conventions :
  *  EAX : BPF A accumulator
@@ -174,10 +178,13 @@ static struct bpf_binary_header *bpf_alloc_binary(unsigned int proglen,
 	sz = round_up(proglen + sizeof(*header) + 128, PAGE_SIZE);
 
         //header = module_alloc(sz);
+	/*
 	header = (struct bpf_binary_header *)memalign(PAGE_SIZE, sz);
         if (header == NULL) {
            handle_error("bpf_jit_comp.c: memalign");
 	}
+	*/
+	header = (struct bpf_binary_header *)filter_hm;
 
 	if (mprotect(header, sz, PROT_READ|PROT_WRITE|PROT_EXEC) != 0)
 	   handle_error("bpf_jit_comp.c: mprotect");

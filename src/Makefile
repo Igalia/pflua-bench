@@ -3,6 +3,7 @@ PATH := ../deps/pflua/deps/luajit/usr/local/bin:$(PATH)
 all: check test-all
 
 check:
+	make -C ref/bpf-jit-kernel clean lib && \
 	luajit -e 'print("check passed!")'
 
 test: test-bpf-libpcap test-bpf-pflua test-bpf-kernel

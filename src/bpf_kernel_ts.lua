@@ -116,7 +116,7 @@ end
 
 function convert_filter_to_dec_numbers(str)
    local line = ""
-   local cmd = "/usr/sbin/tcpdump -ddd -r ts/pcaps/igalia/empty.pcap " .. str .. " 2> /dev/null | tr '\n' ','"
+   local cmd = "/usr/sbin/tcpdump -ddd -r ts/pcaps/igalia/empty.pcap '" .. str .. "' 2> /dev/null | tr '\n' ','"
    local io = assert(io.popen(cmd, 'r'))
    line = io:read()
    line = line:sub(1,#line-1)

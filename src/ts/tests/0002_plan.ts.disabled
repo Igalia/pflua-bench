@@ -54,3 +54,17 @@ filter: tcp port 5555
 pcap_file:igalia/one-gigabyte.pcap
 expected_result:1166716
 enabled:true
+
+id:5
+description:portrange 0-6000
+filter: portrange 0-6000
+pcap_file:igalia/one-gigabyte.pcap
+expected_result:1166716
+enabled:true
+
+id:6
+description:portrange 0-5554
+filter: portrange 0-5554
+pcap_file:igalia/one-gigabyte.pcap
+expected_result:0
+enabled:true

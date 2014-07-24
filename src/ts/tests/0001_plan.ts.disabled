@@ -92,3 +92,38 @@ filter:tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 
 pcap_file:igalia/empty.pcap
 expected_result:0
 enabled:true
+
+id:12
+description:accept all
+filter:
+pcap_file:igalia/ping-flood.pcap
+expected_result:961180
+enabled:true
+
+id:13
+description:ip
+filter:ip
+pcap_file:igalia/ping-flood.pcap
+expected_result:961180
+enabled:true
+
+id:14
+description:tcp
+filter:tcp
+pcap_file:igalia/ping-flood.pcap
+expected_result:0
+enabled:true
+
+id:15
+description:tcp port 5555
+filter:tcp port 5555
+pcap_file:igalia/ping-flood.pcap
+expected_result:0
+enabled:true
+
+id:16
+description:icmp
+filter:icmp
+pcap_file:igalia/ping-flood.pcap
+expected_result:961180
+enabled:true

@@ -145,6 +145,7 @@ local function assert_count(filter, file, pkt_expected)
       end
    end
    lapse = os.clock() - start
+   savefile.records_mm_flush()
    pass = pkt_match == pkt_expected
    return pkt_total, pkt_match, lapse, pass
 end

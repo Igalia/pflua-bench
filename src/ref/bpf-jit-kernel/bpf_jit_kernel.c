@@ -8,6 +8,7 @@
 
 static struct bjk_bpf_info info;
 struct sk_buff *skb;
+char *fg = NULL;
 
 void show_error_and_die(char *e)
 {
@@ -389,11 +390,18 @@ void compile_filter(char *f)
 {
    /* uncompile if needed */
    uncompile_jit_filter(&info);
-   /* empty filter supported */
-   if (f == NULL)
+   /* save filter */
+   if (fg != NULL)
+      free(fg);
+   if (f != NULL) {
+      fg = strdup(f);
+   } else {
+      /* empty filter supported */
+      fg = NULL;
       return;
+   }
    /* set up and compile filter */
-   load_bpf(&info, f);
+   load_bpf(&info, fg);
    compile_jit_filter(&info);
 }
 

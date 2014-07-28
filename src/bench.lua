@@ -151,6 +151,7 @@ local capture_start, capture_end = map_captured_packets(capture)
 local function filter_time(pred, file, expected)
    local total_count = 0
    local match_count = 0
+   collectgarbage("stop")
    local start = now()
    local ptr = capture_start
    while ptr < capture_end do
@@ -163,6 +164,7 @@ local function filter_time(pred, file, expected)
       ptr = packet + record.incl_len
    end
    local lapse = now() - start
+   collectgarbage()
    if match_count ~= expected then
       error("expected "..expected.." matching packets, but got "..match_count)
    end

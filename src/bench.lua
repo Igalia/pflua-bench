@@ -65,6 +65,7 @@ function convert_filter_to_dec_numbers(str)
    io.close()
    return ffi.new("char[?]", #line, line)
 end
+
 local function now()
    local tv = ffi.new("struct timeval")
    assert(ffi.C.gettimeofday(tv, nil) == 0)
@@ -88,9 +89,6 @@ local function compile_filter(filter_str, opts)
       local bpf_prog = bpf.compile(bytecode)
       return function(P, header, len) return bpf_prog(P, len) ~= 0 end
    elseif opts.linux_jit then
-      load_dyn_funcs()
-      local bytecode = convert_filter_to_dec_numbers(filter_str)
-      kernel_compile_filter(bytecode)
       return function(P, header, len)
          return kernel_run_filter_on_packet(len, P) ~= 0 end
    else
@@ -101,7 +99,7 @@ local function compile_filter(filter_str, opts)
    end
 end
 
-
+load_dyn_funcs()
 tests = {}
 for line in io.lines(capture..'.tests') do
    local description, count, filter = line:match("^([^:]+): (%d+):(.*)$")
@@ -174,6 +172,10 @@ end
 function run_filters(engine)
    local results = {}
    for i, test in ipairs(tests) do
+      if engine == "linuxjit" then
+         local bytecode = convert_filter_to_dec_numbers(test.filter)
+         kernel_compile_filter(bytecode)
+      end
       results[i] = filter_time(test[engine], capture, test.count)
    end
    return results

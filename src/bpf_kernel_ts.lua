@@ -133,6 +133,7 @@ local function assert_count(filter, file, pkt_expected)
    -- set default kernel filter
    kernel_compile_filter(f)
    uncompress_if_necessary(file)
+   collectgarbage("stop")
    local records = savefile.records_mm(file)
    local start = os.clock()
    while true do
@@ -145,6 +146,8 @@ local function assert_count(filter, file, pkt_expected)
       end
    end
    lapse = os.clock() - start
+   records = nil
+   collectgarbage()
    pass = pkt_match == pkt_expected
    return pkt_total, pkt_match, lapse, pass
 end

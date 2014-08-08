@@ -15,6 +15,7 @@ local libpcap = require("pf.libpcap")
 local bpf = require("pf.bpf")
 local parse = require('pf.parse')
 local expand = require('pf.expand')
+local optimize = require('pf.optimize')
 local codegen = require('pf.codegen')
 
 ffi.cdef[[
@@ -94,6 +95,7 @@ local function compile_filter(filter_str, opts)
    else
       local expr = parse.parse(filter_str)
       expr = expand.expand(expr, dlt)
+      expr = optimize.optimize(expr)
       local pred = codegen.compile(expr)
       return function(P, header, len) return pred(P, len) end
    end

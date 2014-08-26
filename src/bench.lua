@@ -55,16 +55,6 @@ local function compile_linux_jit(bpf_program)
    return bpf_jit_kernel.compile_filter(prog)
 end
 
-function convert_filter_to_dec_numbers(str)
-   local line = ""
-   local cmd = "/usr/sbin/tcpdump -ddd -r ts/pcaps/igalia/empty.pcap '" .. str .. "' 2> /dev/null | tr '\n' ','"
-   local io = assert(io.popen(cmd, 'r'))
-   line = io:read()
-   line = line:sub(1,#line-1)
-   io.close()
-   return ffi.new("char[?]", #line, line)
-end
-
 local function now()
    local tv = ffi.new("struct timeval")
    assert(ffi.C.gettimeofday(tv, nil) == 0)
@@ -153,7 +143,6 @@ local capture_start, capture_end = map_captured_packets(capture)
 local function filter_time(pred, file, expected)
    local total_count = 0
    local match_count = 0
-   collectgarbage("stop")
    local start = now()
    local ptr = capture_start
    while ptr < capture_end do
@@ -166,7 +155,6 @@ local function filter_time(pred, file, expected)
       ptr = packet + record.incl_len
    end
    local lapse = now() - start
-   collectgarbage()
    if match_count ~= expected then
       error("expected "..expected.." matching packets, but got "..match_count)
    end

@@ -28,34 +28,17 @@ struct timeval {
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 ]]
 
+-- For the kernel JIT
 ffi.cdef[[
-typedef void (*compile_filter_t)(char *f);
-typedef int (*run_filter_on_packet_t)(uint32_t pkt_len, const uint8_t *pkt);
-void *dlopen(const char *filename, int flag);
-void *dlsym(void *handle, const char *symbol);
-char *dlerror(void);
+void compile_filter(char *f);
+int run_filter_on_packet(uint32_t pkt_len, const uint8_t *pkt);
 ]]
 
-local lib_handle
--- void compile_filter(char *f);
-local kernel_compile_filter
--- int run_filter_on_packet(uint32_t pkt_len, const uint8_t *pkt);
-local kernel_run_filter_on_packet
+local bpf_jit_kernel = ffi.load("./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0")
+local kernel_compile_filter = bpf_jit_kernel.compile_filter
+local kernel_run_filter_on_packet = bpf_jit_kernel.run_filter_on_packet
 
 local zero_sec, zero_usec
-
-function load_dyn_funcs()
-   local RTLD_LAZY = 0x0001
-   lib_handle = ffi.C.dlopen("./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0", RTLD_LAZY)
-   if lib_handle == nil then
-      print(ffi.C.dlerror())
-      print("did you compile .so library? it should be at ./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0 ...")
-      print("try 'make -C ref/bpf-jit-kernel lib'")
-      os.exit(-1)
-   end
-   kernel_compile_filter = ffi.cast("compile_filter_t", ffi.C.dlsym(lib_handle, "compile_filter"));
-   kernel_run_filter_on_packet = ffi.cast("run_filter_on_packet_t", ffi.C.dlsym(lib_handle, "run_filter_on_packet"));
-end
 
 function convert_filter_to_dec_numbers(str)
    local line = ""
@@ -101,7 +84,6 @@ local function compile_filter(filter_str, opts)
    end
 end
 
-load_dyn_funcs()
 tests = {}
 for line in io.lines(capture..'.tests') do
    local description, count, filter = line:match("^([^:]+): (%d+):(.*)$")

@@ -6,10 +6,6 @@
 
 #include "bpf_jit_kernel.h"
 
-static struct bjk_bpf_info info;
-struct sk_buff *skb;
-char *fg = NULL;
-
 void show_error_and_die(char *e)
 {
    printf("%s stopping...\n", e);
@@ -299,178 +295,17 @@ int sk_unattached_filter_create(struct sk_filter **pfp, struct sock_fprog *fprog
    return 0;
 }
 
-void compile_jit_filter(struct bjk_bpf_info *info)
+
+struct sk_filter* compile_filter(struct sock_fprog *program)
 {
-   struct sock_fprog program;
-
-   program.len = info->bpf_program_num_elem;
-   program.filter = (struct sock_filter __user *) info->bpf_program;
-
-   if (sk_unattached_filter_create(&info->filter, &program))
-      show_error_and_die("compile_jit_filter: bpf: check failed: parse error");
+    struct sk_filter *ret = NULL;
+    if (sk_unattached_filter_create(&ret, program))
+        show_error_and_die("compile_jit_filter: bpf: check failed: parse error");
+    return ret;
 }
 
-void uncompile_jit_filter(struct bjk_bpf_info *info)
+int run_filter(struct sk_filter *filter, const uint8_t *pkt, uint32_t pkt_len)
 {
-   /* cleanup happens here */
-   /*
-   if (*(&info->filter) != NULL)
-      kfree(*(&info->filter));
-   */
-}
-
-bool run_jit_filter(struct bjk_bpf_info *info, struct sk_buff *skb)
-{
-   return SK_RUN_FILTER(info->filter, skb);
-}
-
-void load_bpf(struct bjk_bpf_info *info, char *bpf_string)
-{
-	char sp, *token, separator = ',';
-	unsigned short bpf_len, i = 0;
-	struct sock_filter tmp;
-
-	info->bpf_program_num_elem = 0;
-	memset(info->bpf_program, 0, sizeof(info->bpf_program));
-
-	if (sscanf(bpf_string, "%hu%c", &bpf_len, &sp) != 2 ||
-	    sp != separator || bpf_len > BJK_BPF_MAX_NUM_INSTR || bpf_len == 0) {
-		show_error_and_die("cmd_load_bpf: syntax error in head length encoding!");
-	}
-
-	token = bpf_string;
-	while ((token = strchr(token, separator)) && (++token)[0]) {
-
-		if (i >= bpf_len)
-			show_error_and_die("cmd_load_bpf: program exceeds encoded length!");
-
-		if (sscanf(token, "%hu %hhu %hhu %u,", &tmp.code, &tmp.jt, &tmp.jf, &tmp.k) != 4) {
-			printf("cmd_load_bpf: syntax error at instruction %d!", i);
-			show_error_and_die("");
-
-		}
-
-		info->bpf_program[i].code = tmp.code;
-		info->bpf_program[i].jt = tmp.jt;
-		info->bpf_program[i].jf = tmp.jf;
-		info->bpf_program[i].k = tmp.k;
-
-		i++;
-	}
-
-	if (i != bpf_len)
-		show_error_and_die("cmd_load_bpf: syntax error exceeding encoded length!");
-	else
-		info->bpf_program_num_elem = bpf_len;
-}
-
-void test_load_bpf(struct bjk_bpf_info *info)
-{
-   if((info->bpf_program[0].k == 65535) &&
-      (info->bpf_program[0].code == 6))
-      printf("test load bpf ok\n");
-   else
-      printf("test failed\n");
-}
-
-void wrap_pkt_with_sk_buff(struct sk_buff *skb)
-{
-   /* quick test data */
-   skb->len = 10;
-   skb->data_len = 0;
-   skb->data = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
-}
-
-void unwrap_pkt_with_sk_buff(struct sk_buff *skb)
-{
-   kfree(skb->data);
-}
-
-void compile_filter(char *f)
-{
-   /* uncompile if needed */
-   uncompile_jit_filter(&info);
-   /* save filter */
-   if (fg != NULL)
-      free(fg);
-   if (f != NULL) {
-      fg = strdup(f);
-   } else {
-      /* empty filter supported */
-      fg = NULL;
-      return;
-   }
-   /* set up and compile filter */
-   load_bpf(&info, fg);
-   compile_jit_filter(&info);
-}
-
-int run_filter_on_packet(uint32_t pkt_len, const uint8_t *pkt)
-{
-   int success;
-   /* empty filter always match */
-   if (info.filter == NULL)
-      return 1;
-   /* empty packet never match minimum filter */
-   if ((pkt_len == 0) || (pkt == NULL))
-      return 0;
-   /* there are actually two length variables associated with an skb, len and
-    * data_len. The latter only comes into play when there is paged data in the
-    * skb. skb->data_len tells how many bytes of paged data there are in the
-    * skb. From this we can derive a few more things:
-    * - The existence of paged data in an skb is indicated by skb->data_len
-    *   being non-zero. This is codified in the helper routine
-    *   skb_is_nonlinear()
-    * - The amount of non-paged data at skb->data can be calculated as
-    *   skb->len - skb->data_len. Again, there is a helper routine already
-    *   defined for this called skb_headlen()
-    */
-   skb->data_len = 0;
-   skb->len = pkt_len;
-   skb->data = (uint8_t *)pkt;
-   success = run_jit_filter(&info, skb);
-   /* success != 0 => match */
-   return success;
-}
-
-__attribute__((constructor)) void init(void) {
-   skb = kmalloc(sizeof(struct sk_buff), GFP_KERNEL);
-   info.filter = NULL;
-}
-
-__attribute__((destructor)) void end(void) {
-   kfree(skb);
-}
-
-int main()
-{
-   int success;
-   // load bpf bytecode
-   //char *test_str = "6,40 0 0 12,21 0 3 2048,48 0 0 23,21 0 1 1,6 0 0 65535,6 0 0 0";
-   char *test_str = "1,6 0 0 65535";
-   load_bpf(&info, test_str);
-
-   // quick test
-   test_load_bpf(&info);
-
-   // jit compile now
-   compile_jit_filter(&info);
-
-   // wrap with sk_buff
-   wrap_pkt_with_sk_buff(skb);
-   if (skb == NULL)
-      show_error_and_die("main: kmalloc failing!");
-
-   // jit run now
-   success = run_jit_filter(&info, skb);
-   if (success != 0)
-      printf("match!\n");
-   else
-      printf("fail!\n");
-
-   // unwrap skb's data
-   unwrap_pkt_with_sk_buff(skb);
-
-   printf("OK\n");
-   return 0;
+  struct sk_buff skb = { .len = pkt_len, .data_len = 0, .data = (char *) pkt };
+   return SK_RUN_FILTER(filter, &skb);
 }

@@ -30,15 +30,30 @@ int gettimeofday(struct timeval *tv, struct timezone *tz);
 
 -- For the kernel JIT
 ffi.cdef[[
-void compile_filter(char *f);
-int run_filter_on_packet(uint32_t pkt_len, const uint8_t *pkt);
+struct sock_fprog {
+   uint16_t len;
+   // Our struct bpf_insn is the same as struct sock_filter.
+   struct bpf_insn *code;
+};
+
+struct sk_filter;
+
+struct sk_filter* compile_filter(struct sock_fprog *prog);
+int run_filter(struct sk_filter *filter, const uint8_t *pkt, uint32_t pkt_len);
 ]]
 
 local bpf_jit_kernel = ffi.load("./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0")
-local kernel_compile_filter = bpf_jit_kernel.compile_filter
-local kernel_run_filter_on_packet = bpf_jit_kernel.run_filter_on_packet
 
 local zero_sec, zero_usec
+
+local function compile_linux_jit(bpf_program)
+   assert(bpf_program.bf_len < 2^16)
+   local prog = ffi.new("struct sock_fprog")
+   prog.len = bpf_program.bf_len
+   -- FIXME: need to keep insns alive?
+   prog.code = bpf_program.bf_insns
+   return bpf_jit_kernel.compile_filter(prog)
+end
 
 function convert_filter_to_dec_numbers(str)
    local line = ""
@@ -73,8 +88,11 @@ local function compile_filter(filter_str, opts)
       local bpf_prog = bpf.compile(bytecode)
       return function(P, header, len) return bpf_prog(P, len) ~= 0 end
    elseif opts.linux_jit then
+      local bytecode = libpcap.compile(filter_str, dlt)
+      local filter = compile_linux_jit(bytecode)
       return function(P, header, len)
-         return kernel_run_filter_on_packet(len, P) ~= 0 end
+         return bpf_jit_kernel.run_filter(filter, P, len) ~= 0
+      end
    else
       local expr = parse.parse(filter_str)
       expr = expand.expand(expr, dlt)
@@ -158,10 +176,6 @@ end
 function run_filters(engine)
    local results = {}
    for i, test in ipairs(tests) do
-      if engine == "linuxjit" then
-         local bytecode = convert_filter_to_dec_numbers(test.filter)
-         kernel_compile_filter(bytecode)
-      end
       results[i] = filter_time(test[engine], capture, test.count)
    end
    return results

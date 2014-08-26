@@ -13,8 +13,8 @@ rel: $(OBJECTS)
 
 lib: CFLAGS += -fPIC
 lib: $(OBJECTS)
-	$(CC) -shared $(CFLAGS) -o libbpf_jit_kernel.so.1.0.0 -Wl,-soname,libbpf_jit_kernel.so.1 $(OBJECTS) -lc
-	$(CC) $(CFLAGS) -o test_lib test_lib.c -ldl
+	$(CC) -shared $(CFLAGS) -g -o libbpf_jit_kernel.so.1.0.0 -Wl,-soname,libbpf_jit_kernel.so.1 $(OBJECTS) -lc
+	$(CC) $(CFLAGS) -g -o test_lib test_lib.c -ldl
 
 %.o: %.c
 	gcc -c -o $@ $< $(CFLAGS)

@@ -1,10 +1,12 @@
 PATH := ../deps/pflua/deps/luajit/usr/local/bin:$(PATH)
 
-all: check test-all
+all: bpf-linux-jit ebpf-linux-jit
 
-check:
-	make -C ref/bpf-jit-kernel clean lib && \
-	luajit -e 'print("check passed!")'
+bpf-linux-jit:
+	make -C ref/bpf-jit-kernel lib
+
+ebpf-linux-jit:
+	make -C ref/bpfe-jit-kernel
 
 test: test-bpf-libpcap test-bpf-pflua test-bpf-kernel
 
@@ -51,25 +53,27 @@ check-png-deps:
 
 csv2:
 	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap libpcap | tee libpcap.csv
+	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap linux_bpf | tee linux-bpf.csv
+	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap linux_ebpf | tee linux-ebpf.csv
 	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap bpf | tee bpf.csv
-	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap linuxjit | tee linuxjit.csv
 	luajit bench.lua ts/pcaps/igalia/one-gigabyte.pcap pflua | tee pflua.csv
 
 csv3:
 	luajit bench.lua ts/pcaps/igalia/ping-flood.pcap libpcap | tee libpcap.csv
+	luajit bench.lua ts/pcaps/igalia/ping-flood.pcap linux_bpf | tee linux-bpf.csv
+	luajit bench.lua ts/pcaps/igalia/ping-flood.pcap linux_ebpf | tee linux-ebpf.csv
 	luajit bench.lua ts/pcaps/igalia/ping-flood.pcap bpf | tee bpf.csv
-	luajit bench.lua ts/pcaps/igalia/ping-flood.pcap linuxjit | tee linuxjit.csv
 	luajit bench.lua ts/pcaps/igalia/ping-flood.pcap pflua | tee pflua.csv
 
 pflua-1gb-1kb-tcp-port-5555.png: check-png-deps csv2
 	~/src/guile-charting/examples/plot-data.scm \
 	  "Millions of packets/second, 1GB of 1kB packets on TCP port 5555" \
-	  pflua-1gb-1kb-tcp-port-5555.png libpcap.csv bpf.csv linuxjit.csv pflua.csv
+	  pflua-1gb-1kb-tcp-port-5555.png libpcap.csv linux-bpf.csv linux-ebpf.csv bpf.csv pflua.csv
 
 pflua-ping-flood.png: check-png-deps csv3
 	~/src/guile-charting/examples/plot-data.scm \
 	  "Millions of packets/second, 60MB of ICMP pings" \
-	  pflua-ping-flood.png libpcap.csv bpf.csv linuxjit.csv pflua.csv
+	  pflua-ping-flood.png libpcap.csv linux-bpf.csv linux-ebpf.csv bpf.csv pflua.csv
 
 graphs: pflua-1gb-1kb-tcp-port-5555.png
 

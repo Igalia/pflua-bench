@@ -28,7 +28,7 @@ struct timeval {
 int gettimeofday(struct timeval *tv, struct timezone *tz);
 ]]
 
--- For the kernel JIT
+-- For the Linux JIT
 ffi.cdef[[
 struct sock_fprog {
    uint16_t len;
@@ -42,17 +42,18 @@ struct sk_filter* compile_filter(struct sock_fprog *prog);
 int run_filter(struct sk_filter *filter, const uint8_t *pkt, uint32_t pkt_len);
 ]]
 
-local bpf_jit_kernel = ffi.load("./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0")
+local linux_bpf_jit = ffi.load("./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0")
+local linux_ebpf_jit = ffi.load("./ref/bpfe-jit-kernel/libbpfe_jit_kernel.so.1.0.0")
 
 local zero_sec, zero_usec
 
-local function compile_linux_jit(bpf_program)
+local function compile_linux_jit(lib, bpf_program)
    assert(bpf_program.bf_len < 2^16)
    local prog = ffi.new("struct sock_fprog")
    prog.len = bpf_program.bf_len
    -- FIXME: need to keep insns alive?
    prog.code = bpf_program.bf_insns
-   return bpf_jit_kernel.compile_filter(prog)
+   return lib.compile_filter(prog)
 end
 
 local function now()
@@ -77,11 +78,19 @@ local function compile_filter(filter_str, opts)
       local bytecode = libpcap.compile(filter_str, dlt)
       local bpf_prog = bpf.compile(bytecode)
       return function(P, header, len) return bpf_prog(P, len) ~= 0 end
-   elseif opts.linux_jit then
+   elseif opts.linux_bpf then
       local bytecode = libpcap.compile(filter_str, dlt)
-      local filter = compile_linux_jit(bytecode)
+      local filter = compile_linux_jit(linux_bpf_jit, bytecode)
+      local run_filter = linux_bpf_jit.run_filter
       return function(P, header, len)
-         return bpf_jit_kernel.run_filter(filter, P, len) ~= 0
+         return run_filter(filter, P, len) ~= 0
+      end
+   elseif opts.linux_ebpf then
+      local bytecode = libpcap.compile(filter_str, dlt)
+      local filter = compile_linux_jit(linux_ebpf_jit, bytecode)
+      local run_filter = linux_ebpf_jit.run_filter
+      return function(P, header, len)
+         return run_filter(filter, P, len) ~= 0
       end
    else
       local expr = parse.parse(filter_str)
@@ -104,7 +113,8 @@ for line in io.lines(capture..'.tests') do
       filter=filter,
       libpcap=compile_filter(filter, {pcap_offline_filter=true}),
       bpf=compile_filter(filter, {bpf=true}),
-      linuxjit=compile_filter(filter, {linux_jit=true}),
+      linux_bpf=compile_filter(filter, {linux_bpf=true}),
+      linux_ebpf=compile_filter(filter, {linux_ebpf=true}),
       pflua=compile_filter(filter)
    }
    table.insert(tests, test)

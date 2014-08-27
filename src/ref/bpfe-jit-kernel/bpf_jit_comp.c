@@ -8,14 +8,19 @@
  * as published by the Free Software Foundation; version 2
  * of the License.
  */
+/*
 #include <linux/moduleloader.h>
 #include <asm/cacheflush.h>
 #include <linux/netdevice.h>
 #include <linux/filter.h>
 #include <linux/if_vlan.h>
 #include <linux/random.h>
+*/
+#include "hack.h"
+#include "filter.h"
+#include <sys/mman.h>
 
-int bpf_jit_enable __read_mostly;
+int bpf_jit_enable __read_mostly = 1;
 
 /*
  * assembly code in arch/x86/net/bpf_jit.S
@@ -98,12 +103,14 @@ static int bpf_size_to_x86_bytes(int bpf_size)
 
 static inline void bpf_flush_icache(void *start, void *end)
 {
+/*
 	mm_segment_t old_fs = get_fs();
 
 	set_fs(KERNEL_DS);
 	smp_wmb();
 	flush_icache_range((unsigned long)start, (unsigned long)end);
 	set_fs(old_fs);
+*/
 }
 
 #define CHOOSE_LOAD_FUNC(K, func) \
@@ -128,9 +135,17 @@ static struct bpf_binary_header *bpf_alloc_binary(unsigned int proglen,
 	 * 128 extra bytes to insert a random section of int3
 	 */
 	sz = round_up(proglen + sizeof(*header) + 128, PAGE_SIZE);
+/*
 	header = module_alloc(sz);
 	if (!header)
 		return NULL;
+*/
+	header = mmap(NULL, sz, PROT_READ|PROT_WRITE|PROT_EXEC,
+                      MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+        if ((void *)header == MAP_FAILED) {
+		perror("bpf_jit_comp.c: mmap");
+		exit(EXIT_FAILURE);
+	}
 
 	memset(header, 0xcc, sz); /* fill whole space with int3 instructions */
 
@@ -138,9 +153,13 @@ static struct bpf_binary_header *bpf_alloc_binary(unsigned int proglen,
 	hole = min(sz - (proglen + sizeof(*header)), PAGE_SIZE - sizeof(*header));
 
 	/* insert a random number of int3 instructions before BPF code */
+#define prandom_u32() 0
 	*image_ptr = &header->image[prandom_u32() % hole];
+#undef prandom_u32
 	return header;
 }
+
+static void set_memory_ro(long addr, unsigned int pages) {}
 
 /* pick a register outside of BPF range for JIT internal work */
 #define AUX_REG (MAX_BPF_REG + 1)
@@ -739,7 +758,7 @@ emit_cond_jmp:		/* convert BPF opcode to x86 */
 				jmp_cond = X86_JGE;
 				break;
 			default: /* to silence gcc warning */
-				return -EFAULT;
+				abort();
 			}
 			jmp_offset = addrs[i + insn->off] - addrs[i];
 			if (is_imm8(jmp_offset)) {
@@ -747,8 +766,8 @@ emit_cond_jmp:		/* convert BPF opcode to x86 */
 			} else if (is_simm32(jmp_offset)) {
 				EMIT2_off32(0x0F, jmp_cond + 0x10, jmp_offset);
 			} else {
-				pr_err("cond_jmp gen bug %llx\n", jmp_offset);
-				return -EFAULT;
+				pr_err("cond_jmp gen bug %lx\n", (u64)jmp_offset);
+				abort();
 			}
 
 			break;
@@ -764,8 +783,8 @@ emit_jmp:
 			} else if (is_simm32(jmp_offset)) {
 				EMIT1_off32(0xE9, jmp_offset);
 			} else {
-				pr_err("jmp gen bug %llx\n", jmp_offset);
-				return -EFAULT;
+				pr_err("jmp gen bug %lx\n", jmp_offset);
+				abort();
 			}
 			break;
 
@@ -775,7 +794,7 @@ emit_jmp:
 		case BPF_LD | BPF_ABS | BPF_W:
 			func = CHOOSE_LOAD_FUNC(imm32, sk_load_word);
 common_load:		ctx->seen_ld_abs = true;
-			jmp_offset = func - (image + addrs[i]);
+			jmp_offset = image ? (func - (image + addrs[i])) : 0;
 			if (!func || !is_simm32(jmp_offset)) {
 				pr_err("unsupported bpf func %d addr %p image %p\n",
 				       imm32, func, image);
@@ -851,7 +870,7 @@ common_load:		ctx->seen_ld_abs = true;
 		if (image) {
 			if (unlikely(proglen + ilen > oldproglen)) {
 				pr_err("bpf_jit_compile fatal error\n");
-				return -EFAULT;
+				abort();
 			}
 			memcpy(image + proglen, temp, ilen);
 		}
@@ -899,8 +918,10 @@ void bpf_int_jit_compile(struct bpf_prog *prog)
 		proglen = do_jit(prog, addrs, image, oldproglen, &ctx);
 		if (proglen <= 0) {
 			image = NULL;
+/*
 			if (header)
 				module_free(NULL, header);
+*/
 			goto out;
 		}
 		if (image) {
@@ -930,6 +951,7 @@ out:
 	kfree(addrs);
 }
 
+/*
 static void bpf_jit_free_deferred(struct work_struct *work)
 {
 	struct bpf_prog *fp = container_of(work, struct bpf_prog, work);
@@ -940,13 +962,16 @@ static void bpf_jit_free_deferred(struct work_struct *work)
 	module_free(NULL, header);
 	kfree(fp);
 }
+*/
 
 void bpf_jit_free(struct bpf_prog *fp)
 {
+/*
 	if (fp->jited) {
 		INIT_WORK(&fp->work, bpf_jit_free_deferred);
 		schedule_work(&fp->work);
 	} else {
 		kfree(fp);
 	}
+*/
 }

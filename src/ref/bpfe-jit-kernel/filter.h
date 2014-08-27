@@ -1,14 +1,18 @@
 /*
  * Linux Socket Filter Data Structures
  */
-#ifndef __LINUX_FILTER_H__
-#define __LINUX_FILTER_H__
+#ifndef __LINUX_KFILTER_H__
+#define __LINUX_KFILTER_H__
 
+/*
 #include <linux/atomic.h>
 #include <linux/compat.h>
 #include <linux/skbuff.h>
 #include <linux/workqueue.h>
 #include <uapi/linux/filter.h>
+*/
+#include "hack.h"
+#include <linux/filter.h>
 
 /* Internally used and optimized filter representation with extended
  * instruction set based on top of classic BPF.
@@ -333,13 +337,13 @@ struct bpf_prog {
 	union {
 		struct sock_filter	insns[0];
 		struct bpf_insn		insnsi[0];
-		struct work_struct	work;
+		/* struct work_struct	work; */
 	};
 };
 
 struct sk_filter {
-	atomic_t	refcnt;
-	struct rcu_head	rcu;
+	/* atomic_t	refcnt; */
+	/* struct rcu_head	rcu; */
 	struct bpf_prog	*prog;
 };
 
@@ -404,7 +408,7 @@ static inline u16 bpf_anc_helper(const struct sock_filter *ftest)
 		BPF_ANCILLARY(VLAN_TAG);
 		BPF_ANCILLARY(VLAN_TAG_PRESENT);
 		BPF_ANCILLARY(PAY_OFFSET);
-		BPF_ANCILLARY(RANDOM);
+/*		BPF_ANCILLARY(RANDOM); */
 		}
 		/* Fallthrough. */
 	default:
@@ -426,8 +430,10 @@ static inline void *bpf_load_pointer(const struct sk_buff *skb, int k,
 
 #ifdef CONFIG_BPF_JIT
 #include <stdarg.h>
+/*
 #include <linux/linkage.h>
 #include <linux/printk.h>
+*/
 
 void bpf_jit_compile(struct bpf_prog *fp);
 void bpf_jit_free(struct bpf_prog *fp);
@@ -437,9 +443,11 @@ static inline void bpf_jit_dump(unsigned int flen, unsigned int proglen,
 {
 	pr_err("flen=%u proglen=%u pass=%u image=%pK\n",
 	       flen, proglen, pass, image);
+/*
 	if (image)
 		print_hex_dump(KERN_ERR, "JIT code: ", DUMP_PREFIX_OFFSET,
 			       16, 1, image, proglen, false);
+*/
 }
 #else
 #include <linux/slab.h>
@@ -459,4 +467,4 @@ static inline int bpf_tell_extensions(void)
 	return SKF_AD_MAX;
 }
 
-#endif /* __LINUX_FILTER_H__ */
+#endif /* __LINUX_KFILTER_H__ */

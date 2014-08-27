@@ -20,9 +20,14 @@
  * Andi Kleen - Fix a few bad bugs and races.
  * Kris Katterjohn - Added many additional checks in bpf_check_classic()
  */
+#include "hack.h"
+#include "filter.h"
+
+#if 0
 #include <linux/filter.h>
 #include <linux/skbuff.h>
 #include <asm/unaligned.h>
+#endif
 
 /* Registers */
 #define BPF_R0	regs[BPF_REG_0]
@@ -51,6 +56,8 @@
  */
 void *bpf_internal_load_pointer_neg_helper(const struct sk_buff *skb, int k, unsigned int size)
 {
+	abort();
+#if 0
 	u8 *ptr = NULL;
 
 	if (k >= SKF_NET_OFF)
@@ -59,6 +66,7 @@ void *bpf_internal_load_pointer_neg_helper(const struct sk_buff *skb, int k, uns
 		ptr = skb_mac_header(skb) + k - SKF_LL_OFF;
 	if (ptr >= skb->head && ptr + size <= skb_tail_pointer(skb))
 		return ptr;
+#endif
 
 	return NULL;
 }
@@ -72,6 +80,7 @@ noinline u64 __bpf_call_base(u64 r1, u64 r2, u64 r3, u64 r4, u64 r5)
 	return 0;
 }
 
+#if 0
 /**
  *	__bpf_prog_run - run eBPF program on a given context
  *	@ctx: is the data we are operating on
@@ -509,6 +518,7 @@ load_byte:
 void __weak bpf_int_jit_compile(struct bpf_prog *prog)
 {
 }
+#endif
 
 /**
  *	bpf_prog_select_runtime - select execution runtime for BPF program
@@ -519,7 +529,7 @@ void __weak bpf_int_jit_compile(struct bpf_prog *prog)
  */
 void bpf_prog_select_runtime(struct bpf_prog *fp)
 {
-	fp->bpf_func = (void *) __bpf_prog_run;
+	fp->bpf_func = (void *) /* __bpf_prog_run */ NULL;
 
 	/* Probe if internal BPF can be JITed */
 	bpf_int_jit_compile(fp);

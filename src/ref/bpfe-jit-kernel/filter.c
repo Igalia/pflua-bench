@@ -21,30 +21,35 @@
  * Kris Katterjohn - Added many additional checks in bpf_check_classic()
  */
 
-#include <linux/module.h>
+#include "hack.h"
+#include "filter.h"
+
+// #include <linux/module.h>
 #include <linux/types.h>
-#include <linux/mm.h>
+// #include <linux/mm.h>
 #include <linux/fcntl.h>
 #include <linux/socket.h>
 #include <linux/in.h>
-#include <linux/inet.h>
+#include <sys/socket.h>
+// #include <linux/inet.h>
 #include <linux/netdevice.h>
 #include <linux/if_packet.h>
-#include <linux/gfp.h>
-#include <net/ip.h>
-#include <net/protocol.h>
-#include <net/netlink.h>
-#include <linux/skbuff.h>
-#include <net/sock.h>
+// #include <linux/gfp.h>
+// #include <net/ip.h>
+// #include <net/protocol.h>
+// #include <net/netlink.h>
+// #include <linux/skbuff.h>
+// #include <net/sock.h>
 #include <linux/errno.h>
-#include <linux/timer.h>
-#include <asm/uaccess.h>
-#include <asm/unaligned.h>
+// #include <linux/timer.h>
+// #include <asm/uaccess.h>
+// #include <asm/unaligned.h>
 #include <linux/filter.h>
-#include <linux/ratelimit.h>
+// #include <linux/ratelimit.h>
 #include <linux/seccomp.h>
 #include <linux/if_vlan.h>
 
+#if 0
 /**
  *	sk_filter - run a packet through a socket filter
  *	@sk: sock associated with &sk_buff
@@ -86,7 +91,9 @@ int sk_filter(struct sock *sk, struct sk_buff *skb)
 	return err;
 }
 EXPORT_SYMBOL(sk_filter);
+#endif
 
+#if 0
 /* Helper to find the offset of pkt_type in sk_buff structure. We want
  * to make sure its still a 3bit field starting at a byte boundary;
  * taken from arch/x86/net/bpf_jit_comp.c.
@@ -172,10 +179,12 @@ static u64 __get_random_u32(u64 ctx, u64 a, u64 x, u64 r4, u64 r5)
 {
 	return prandom_u32();
 }
+#endif
 
 static bool convert_bpf_extensions(struct sock_filter *fp,
 				   struct bpf_insn **insnp)
 {
+#if 0
 	struct bpf_insn *insn = *insnp;
 
 	switch (fp->k) {
@@ -309,6 +318,9 @@ static bool convert_bpf_extensions(struct sock_filter *fp,
 
 	*insnp = insn;
 	return true;
+#endif
+	BUG_ON(__bpf_call_base(0, 0, 0, 0, 0) != 0);
+	return false;
 }
 
 /**
@@ -810,6 +822,7 @@ int bpf_check_classic(const struct sock_filter *filter, unsigned int flen)
 }
 EXPORT_SYMBOL(bpf_check_classic);
 
+#if 0
 static int bpf_prog_store_orig_filter(struct bpf_prog *fp,
 				      const struct sock_fprog *fprog)
 {
@@ -830,6 +843,7 @@ static int bpf_prog_store_orig_filter(struct bpf_prog *fp,
 
 	return 0;
 }
+#endif
 
 static void bpf_release_orig_filter(struct bpf_prog *fp)
 {
@@ -847,12 +861,15 @@ static void __bpf_prog_release(struct bpf_prog *prog)
 	bpf_prog_free(prog);
 }
 
+#if 0
 static void __sk_filter_release(struct sk_filter *fp)
 {
 	__bpf_prog_release(fp->prog);
 	kfree(fp);
 }
+#endif
 
+#if 0
 /**
  * 	sk_filter_release_rcu - Release a socket filter by rcu_head
  *	@rcu: rcu_head that contains the sk_filter to free
@@ -875,13 +892,16 @@ static void sk_filter_release(struct sk_filter *fp)
 	if (atomic_dec_and_test(&fp->refcnt))
 		call_rcu(&fp->rcu, sk_filter_release_rcu);
 }
+#endif
 
 void sk_filter_uncharge(struct sock *sk, struct sk_filter *fp)
 {
+#if 0
 	u32 filter_size = bpf_prog_size(fp->prog->len);
 
 	atomic_sub(filter_size, &sk->sk_omem_alloc);
 	sk_filter_release(fp);
+#endif
 }
 
 /* try to charge the socket memory if there is space available
@@ -889,6 +909,7 @@ void sk_filter_uncharge(struct sock *sk, struct sk_filter *fp)
  */
 bool sk_filter_charge(struct sock *sk, struct sk_filter *fp)
 {
+#if 0
 	u32 filter_size = bpf_prog_size(fp->prog->len);
 
 	/* same check as in sock_kmalloc() */
@@ -899,6 +920,8 @@ bool sk_filter_charge(struct sock *sk, struct sk_filter *fp)
 		return true;
 	}
 	return false;
+#endif
+	return true;
 }
 
 static struct bpf_prog *bpf_migrate_filter(struct bpf_prog *fp)
@@ -991,6 +1014,8 @@ static struct bpf_prog *bpf_prepare_filter(struct bpf_prog *fp)
 	if (!fp->jited)
 		fp = bpf_migrate_filter(fp);
 
+        if (!fp->jited) abort();
+
 	return fp;
 }
 
@@ -1038,12 +1063,30 @@ int bpf_prog_create(struct bpf_prog **pfp, struct sock_fprog_kern *fprog)
 }
 EXPORT_SYMBOL_GPL(bpf_prog_create);
 
+struct bpf_prog* compile_filter(struct sock_fprog_kern *fprog)
+{
+	struct bpf_prog *fp = NULL;
+	if (bpf_prog_create(&fp, fprog) != 0) abort();
+	return fp;
+}
+
+int run_filter(struct bpf_prog *prog, u8 *pkt, u32 pkt_len)
+{
+	struct sk_buff skb = {
+		.len = pkt_len,
+		.data_len = 0,
+		.data = pkt
+	};
+	return prog->bpf_func(&skb, prog->insnsi);
+}
+
 void bpf_prog_destroy(struct bpf_prog *fp)
 {
 	__bpf_prog_release(fp);
 }
 EXPORT_SYMBOL_GPL(bpf_prog_destroy);
 
+#if 0
 /**
  *	sk_attach_filter - attach a socket filter
  *	@fprog: the filter program
@@ -1177,3 +1220,4 @@ out:
 	release_sock(sk);
 	return ret;
 }
+#endif

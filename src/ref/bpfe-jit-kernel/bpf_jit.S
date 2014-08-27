@@ -7,8 +7,8 @@
  * as published by the Free Software Foundation; version 2
  * of the License.
  */
-#include <linux/linkage.h>
-#include <asm/dwarf2.h>
+// #include <linux/linkage.h>
+// #include <asm/dwarf2.h>
 
 /*
  * Calling convention :
@@ -22,6 +22,13 @@
 #define MAX_BPF_STACK (512 /* from filter.h */ + \
 	32 /* space for rbx,r13,r14,r15 */ + \
 	8 /* space for skb_copy_bits */)
+
+        .globl  _skb_copy_bits
+	.globl  _bpf_internal_load_pointer_neg_helper
+	.data
+	.comm   _skb_copy_bits,8,8
+	.comm   _bpf_internal_load_pointer_neg_helper,8,8
+        .section .rodata
 
 sk_load_word:
 	.globl	sk_load_word
@@ -79,7 +86,9 @@ sk_load_byte_positive_offset:
 /* rsi already has offset */			\
 	mov	$LEN,%ecx;	/* len */	\
 	lea	- MAX_BPF_STACK + 32(%rbp),%rdx;			\
-	call	skb_copy_bits;			\
+	//call	skb_copy_bits;			\
+	movq    _skb_copy_bits(%rip),%eax;      \
+	call    %eax;                           \
 	test    %eax,%eax;			\
 	pop	SKBDATA;			\
 	pop	%r9;
@@ -112,7 +121,9 @@ bpf_slow_path_byte:
 	push	SKBDATA;					\
 /* rsi already has offset */					\
 	mov	$SIZE,%edx;	/* size */			\
-	call	bpf_internal_load_pointer_neg_helper;		\
+	//call	bpf_internal_load_pointer_neg_helper;		  \
+	movq    _bpf_internal_load_pointer_neg_helper(%rip),%eax; \
+	call    %eax;                                             \
 	test	%rax,%rax;					\
 	pop	SKBDATA;					\
 	pop	%r9;						\

@@ -1,12 +1,10 @@
 PATH := ../deps/pflua/deps/luajit/usr/local/bin:$(PATH)
 
-all: bpf-linux-jit ebpf-linux-jit
+all: linux-jit
 
-bpf-linux-jit:
-	make -C ref/bpf-jit-kernel lib
-
-ebpf-linux-jit:
-	make -C ref/bpfe-jit-kernel
+linux-jit:
+	make -C ref/linux-bpf-jit
+	make -C ref/linux-ebpf-jit
 
 test: test-bpf-libpcap test-bpf-pflua test-bpf-kernel
 

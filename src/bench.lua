@@ -36,14 +36,12 @@ struct sock_fprog {
    struct bpf_insn *code;
 };
 
-struct sk_filter;
-
-struct sk_filter* compile_filter(struct sock_fprog *prog);
-int run_filter(struct sk_filter *filter, const uint8_t *pkt, uint32_t pkt_len);
+void* compile_filter(struct sock_fprog *prog);
+int run_filter(void *filter, const uint8_t *pkt, uint32_t pkt_len);
 ]]
 
-local linux_bpf_jit = ffi.load("./ref/bpf-jit-kernel/libbpf_jit_kernel.so.1.0.0")
-local linux_ebpf_jit = ffi.load("./ref/bpfe-jit-kernel/libbpfe_jit_kernel.so.1.0.0")
+local linux_bpf_jit = ffi.load("./ref/linux-bpf-jit/linux-bpf-jit.so")
+local linux_ebpf_jit = ffi.load("./ref/linux-ebpf-jit/linux-ebpf-jit.so")
 
 local zero_sec, zero_usec
 

@@ -2,7 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pcap.h>
-#include <time.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+
 
 typedef unsigned int uint_t;
 typedef int bool_t;
@@ -20,7 +27,8 @@ typedef int bool_t;
 
 typedef struct {
    uint_t pkt_seen;
-   float  et;
+   uint_t pkt_matched;
+   double  et;
 } stat_t;
 
 struct {
@@ -56,52 +64,106 @@ void load_args_or_die(int argc, char **argv) {
    s.exp_result = strtol(aux, (char **)NULL, 10);
 }
 
-void run_filter_on_pcap_or_die(char *filter, char *pcap_file) {
-   char errbuf[PCAP_ERRBUF_SIZE];
-   struct pcap_pkthdr header;
+struct pcap_record {
+  unsigned int ts_sec;
+  unsigned int ts_usec;
+  unsigned int caplen;
+  unsigned int len;
+};
+
+void map_pcap_file(char *file, unsigned char **start, unsigned char **end) {
+   unsigned char *ptr, *ptr_end;
+   int fd;
+   off_t size;
+
+   fd = open(file, O_RDONLY);
+   if (fd < 0) print_error_and_die(strerror(errno));
+
+   size = lseek(fd, 0, SEEK_END);
+   if (errno) print_error_and_die(strerror(errno));
+   lseek(fd, 0, SEEK_SET);
+   if (errno) print_error_and_die(strerror(errno));
+
+   ptr = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+   if (ptr == MAP_FAILED) print_error_and_die(strerror(errno));
+
+   ptr_end = ptr + size;
+   {
+     struct pcap_file_header *header = (struct pcap_file_header *)ptr;
+     if (header->magic == 0xD4C3B2A1)
+       print_error_and_die("endian mismatch in pcap file");
+     else if (header->magic != 0xA1B2C3D4)
+       print_error_and_die("bad pcap magic number");
+     ptr += sizeof *header;
+   }
+
+   *start = ptr;
+   *end = ptr_end;
+}
+
+void run_filter(char *filter, unsigned char *ptr, unsigned char *ptr_end) {
    struct bpf_program fp;
    pcap_t *handle;
-   unsigned int pkt_counter;
-   float start, end;
+   unsigned int seen, matched;
+   struct timeval start, end;
 
-   handle = pcap_open_offline(pcap_file, errbuf);
+   handle = pcap_open_dead(DLT_EN10MB, 65535);
    if (handle == NULL)
       print_error_and_die("pcap_open_offline failed\n");
 
-   if (pcap_compile(handle, &fp, filter, 0, -1) == -1)
+   if (pcap_compile(handle, &fp, filter, 1, -1) == -1)
       print_error_and_die("pcap_compile failed\n");
 
-   if (pcap_setfilter(handle, &fp) == -1)
-      print_error_and_die("pcap_setfilter failed\n");
+   seen = matched = 0;
 
-   pkt_counter = 0;
+   gettimeofday(&start, NULL);
 
-   start = (float)clock()/CLOCKS_PER_SEC;
+   while (ptr < ptr_end)
+     {
+       struct pcap_record *record = (struct pcap_record *)ptr;
+       struct pcap_pkthdr header = {
+         { record->ts_sec, record->ts_usec },
+         record->caplen,
+         record->len
+       };
+       unsigned char *packet = ptr + sizeof(*record);
+       if (pcap_offline_filter(&fp, &header, packet))
+         matched++;
+       seen++;
+       ptr = packet + record->caplen;
+     }
 
-   while (pcap_next(handle, &header))
-      pkt_counter++;
+   gettimeofday(&end, NULL);
 
-   end = (float)clock()/CLOCKS_PER_SEC;
-
-   s.stat.et = end - start;
-   s.stat.pkt_seen = pkt_counter;
-}
-
-void show_result_and_stats() {
-   printf("pkt_seen:%d, elapsed_time: %f, pass: %s\n", s.stat.pkt_seen,
-               s.stat.et, s.stat.pkt_seen == s.exp_result ? "TRUE" : "FALSE");
+   s.stat.et = end.tv_sec - start.tv_sec;
+   s.stat.et += (end.tv_usec - start.tv_usec) * 1.0e-6;
+   s.stat.pkt_seen = seen;
+   s.stat.pkt_matched = matched;
 }
 
 int main(int argc, char **argv) {
+   unsigned char *ptr, *ptr_end;
 
    /* check and load args */
    load_args_or_die(argc, argv);
 
-   /* run filter and gather stats */
-   run_filter_on_pcap_or_die(s.filter, s.pcap_file);
+   map_pcap_file(s.pcap_file, &ptr, &ptr_end);
 
-   /* show result and stats */
-   show_result_and_stats();
+   /* warmup */
+   run_filter(s.filter, ptr, ptr_end);
+
+   /* run filter and gather stats */
+   run_filter(s.filter, ptr, ptr_end);
+
+   if (s.stat.pkt_matched != s.exp_result)
+     {
+       fprintf(stderr, "Error: Expected to see %u packets, got %u packets\n",
+               s.exp_result, s.stat.pkt_matched);
+       return 1;
+     }
+   
+   fprintf(stdout, "\"%s\" on %s: %.1f MPPS\n",
+           s.filter, s.pcap_file, s.stat.pkt_seen / s.stat.et / 1.0e6);
 
    return 0;
 }

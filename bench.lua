@@ -1,6 +1,6 @@
 module("bench",package.seeall)
 
-package.path = package.path .. ";../deps/pflua/src/?.lua"
+package.path = package.path .. ";deps/pflua/src/?.lua"
 
 local savefile = require("pf.savefile")
 local pf = require("pf")

@@ -1,10 +1,10 @@
 PATH := ../deps/pflua/deps/luajit/usr/local/bin:$(PATH)
 
-all: linux-jit
+all: all-recursive
 
-linux-jit:
-	make -C ref/linux-bpf-jit
-	make -C ref/linux-ebpf-jit
+all-recursive:
+	make -C linux-bpf-jit
+	make -C linux-ebpf-jit
 
 GUILE=guile
 

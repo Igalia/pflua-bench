@@ -40,8 +40,8 @@ void* compile_filter(struct sock_fprog *prog);
 int run_filter(void *filter, const uint8_t *pkt, uint32_t pkt_len);
 ]]
 
-local linux_bpf_jit = ffi.load("./ref/linux-bpf-jit/linux-bpf-jit.so")
-local linux_ebpf_jit = ffi.load("./ref/linux-ebpf-jit/linux-ebpf-jit.so")
+local linux_bpf_jit = ffi.load("./linux-bpf-jit/linux-bpf-jit.so")
+local linux_ebpf_jit = ffi.load("./linux-ebpf-jit/linux-ebpf-jit.so")
 
 local zero_sec, zero_usec
 

@@ -44,28 +44,28 @@ check-png-deps:
 savefiles/one-gigabyte.pcap: savefiles/one-gigabyte.pcap.xz
 	unxz -k $<
 
-1gb-1kb-tcp-port-555-csv: savefiles/one-gigabyte.pcap
-	set -e; luajit bench.lua savefiles/one-gigabyte.pcap libpcap | tee libpcap.csv
-	set -e; luajit bench.lua savefiles/one-gigabyte.pcap linux_bpf | tee linux-bpf.csv
-	set -e; luajit bench.lua savefiles/one-gigabyte.pcap linux_ebpf | tee linux-ebpf.csv
-	set -e; luajit bench.lua savefiles/one-gigabyte.pcap bpf | tee bpf.csv
-	set -e; luajit bench.lua savefiles/one-gigabyte.pcap pflua | tee pflua.csv
+1gb-1kb-tcp-port-5555-csv: savefiles/one-gigabyte.pcap
+	set -e; luajit bench.lua savefiles/one-gigabyte.pcap libpcap > libpcap.csv
+	set -e; luajit bench.lua savefiles/one-gigabyte.pcap linux_bpf > linux-bpf.csv
+	set -e; luajit bench.lua savefiles/one-gigabyte.pcap linux_ebpf > linux-ebpf.csv
+	set -e; luajit bench.lua savefiles/one-gigabyte.pcap bpf > bpf.csv
+	set -e; luajit bench.lua savefiles/one-gigabyte.pcap pflua > pflua.csv
 
 ping-flood-csv:
-	set -e; luajit bench.lua savefiles/ping-flood.pcap libpcap | tee libpcap.csv
-	set -e; luajit bench.lua savefiles/ping-flood.pcap linux_bpf | tee linux-bpf.csv
-	set -e; luajit bench.lua savefiles/ping-flood.pcap linux_ebpf | tee linux-ebpf.csv
-	set -e; luajit bench.lua savefiles/ping-flood.pcap bpf | tee bpf.csv
-	set -e; luajit bench.lua savefiles/ping-flood.pcap pflua | tee pflua.csv
+	set -e; luajit bench.lua savefiles/ping-flood.pcap libpcap > libpcap.csv
+	set -e; luajit bench.lua savefiles/ping-flood.pcap linux_bpf > linux-bpf.csv
+	set -e; luajit bench.lua savefiles/ping-flood.pcap linux_ebpf > linux-ebpf.csv
+	set -e; luajit bench.lua savefiles/ping-flood.pcap bpf > bpf.csv
+	set -e; luajit bench.lua savefiles/ping-flood.pcap pflua > pflua.csv
 
 wingolog-csv:
-	set -e; luajit bench.lua savefiles/wingolog.org.pcap libpcap | tee libpcap.csv
-	set -e; luajit bench.lua savefiles/wingolog.org.pcap linux_bpf | tee linux-bpf.csv
-	set -e; luajit bench.lua savefiles/wingolog.org.pcap linux_ebpf | tee linux-ebpf.csv
-	set -e; luajit bench.lua savefiles/wingolog.org.pcap bpf | tee bpf.csv
-	set -e; luajit bench.lua savefiles/wingolog.org.pcap pflua | tee pflua.csv
+	set -e; luajit bench.lua savefiles/wingolog.org.pcap libpcap > libpcap.csv
+	set -e; luajit bench.lua savefiles/wingolog.org.pcap linux_bpf > linux-bpf.csv
+	set -e; luajit bench.lua savefiles/wingolog.org.pcap linux_ebpf > linux-ebpf.csv
+	set -e; luajit bench.lua savefiles/wingolog.org.pcap bpf > bpf.csv
+	set -e; luajit bench.lua savefiles/wingolog.org.pcap pflua > pflua.csv
 
-pflua-1gb-1kb-tcp-port-5555.png: check-png-deps 1gb-1kb-tcp-port-555-csv
+pflua-1gb-1kb-tcp-port-5555.png: check-png-deps 1gb-1kb-tcp-port-5555-csv
 	~/src/guile-charting/examples/plot-data.scm \
 	  "Millions of packets/second, 1GB of 1kB packets on TCP port 5555" \
 	  pflua-1gb-1kb-tcp-port-5555.png libpcap.csv linux-bpf.csv linux-ebpf.csv bpf.csv pflua.csv

@@ -4,3 +4,5 @@ tcp: 19562: tcp
 tcp port 80: 18640: tcp port 80
 tcp port 81: 0: tcp port 81
 portrange 0-6000: 19574: portrange 0-6000
+host 178.79.150.233: 19576: host 178.79.150.233
+host 178.79.150.234: 0: host 178.79.150.234

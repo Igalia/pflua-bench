@@ -22,7 +22,7 @@ check_submodules:
 
 .SERIAL: all
 
-SCENARIOS:=1gb-1kb-tcp-port-5555 ping-flood wingolog.org
+SCENARIOS:=1gb-1kb-tcp-port-5555 ping-flood wingolog.org-1 wingolog.org-2
 
 maintainer-clean:
 	for i in $(SCENARIOS); do make -C results/$$i maintainer-clean; done

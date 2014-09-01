@@ -1,5 +1,5 @@
 accept all: 19589:
 ip: 19574: ip
 tcp: 19562: tcp
-tcp port 80: 18640: tcp port 80
-tcp port 81: 0: tcp port 81
+tcp src port 80: 5601: tcp src port 80
+src net 178.79.150.0/24: 6063: src net 178.79.150.0/24

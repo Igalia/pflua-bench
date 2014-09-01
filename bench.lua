@@ -1,6 +1,13 @@
 module("bench",package.seeall)
 
-package.path = package.path .. ";deps/pflua/src/?.lua"
+local function dirname(s)
+   local slash = s:find("/()[^/]+$")
+   if slash then return s:sub(1, slash - 1) end
+   return "."
+end
+local dot = dirname(arg[0])
+
+package.path = package.path .. ";" .. dot .. "/deps/pflua/src/?.lua"
 
 local ffi = require("ffi")
 local pf = require("pf")
@@ -20,8 +27,8 @@ void* compile_filter(struct sock_fprog *prog);
 int run_filter(void *filter, const uint8_t *pkt, uint32_t pkt_len);
 ]]
 
-local linux_bpf_jit = ffi.load("./linux-bpf-jit/linux-bpf-jit.so")
-local linux_ebpf_jit = ffi.load("./linux-ebpf-jit/linux-ebpf-jit.so")
+local linux_bpf_jit = ffi.load(dot .. "/linux-bpf-jit/linux-bpf-jit.so")
+local linux_ebpf_jit = ffi.load(dot .. "/linux-ebpf-jit/linux-ebpf-jit.so")
 
 local function compile_linux_jit_filter(filter_str, jit_lib)
    local dlt = "EN10MB"
@@ -41,13 +48,13 @@ local compilers = {
    libpcap = function (filter)
       return pf.compile_filter(filter, {pcap_offline_filter=true})
    end,
-   linux_bpf = function (filter)
+   ["linux-bpf"] = function (filter)
       return compile_linux_jit_filter(filter, linux_bpf_jit)
    end,
-   linux_ebpf = function (filter)
+   ["linux-ebpf"] = function (filter)
       return compile_linux_jit_filter(filter, linux_ebpf_jit)
    end,
-   bpf = function (filter)
+   ["bpf-lua"] = function (filter)
       return pf.compile_filter(filter, {bpf=true})
    end,
    pflua = function (filter)

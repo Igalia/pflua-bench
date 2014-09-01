@@ -68,12 +68,18 @@ mode, under Debian GNU/Linux (3.14-2), on an otherwise unloaded machine.
 
 # One gigabyte: 1.1M kilobytes of zeroes
 
-![Benchmark results](http://wingolog.org/pub/pflua-1gb-1kb-tcp-port-5555.png)
+![Summary](https://raw.githubusercontent.com/Igalia/pflua-bench/master/results/1gb-1kb-tcp-port-5555/1gb-1kb-tcp-port-5555.png)
+
+[Raw results.](https://github.com/Igalia/pflua-bench/tree/master/results/1gb-1kb-tcp-port-5555)
 
 # Ping flood: 1M ping packets
 
-![Benchmark results](http://wingolog.org/pub/pflua-ping-flood.png)
+![Summary](https://raw.githubusercontent.com/Igalia/pflua-bench/master/results/ping-flood/ping-flood.png)
+
+[Raw results.](https://github.com/Igalia/pflua-bench/tree/master/results/ping-flood)
 
 # Web server: 20K packets from `wingolog.org`
 
-![Benchmark results](http://wingolog.org/pub/pflua-wingolog.png)
+![Summary](https://raw.githubusercontent.com/Igalia/pflua-bench/master/results/wingolog.org/wingolog.org.png)
+
+[Raw results.](https://github.com/Igalia/pflua-bench/tree/master/results/wingolog.org)

@@ -62,10 +62,10 @@ local compilers = {
    end
 }
 
-local function load_tests(capture, engine)
+local function load_tests(filters, engine)
    local tests = {}
    local compile = assert(compilers[engine])
-   for line in io.lines(capture..'.tests') do
+   for line in io.lines(filters) do
       local description, count, filter = line:match("^([^:]+): (%d+):(.*)$")
       assert(filter, "failed to parse line "..line)
       if #tests > 0 then io.write('\t') end
@@ -121,10 +121,11 @@ function run_tests(tests, capture_start, capture_end, iterations)
 end
 
 function main(...)
-   local capture, engine, iterations = ...
-   assert(engine, "usage: bench.lua PATH/TO/CAPTURE.PCAP ENGINE [ITERATIONS]")
+   local capture, filters, engine, iterations = ...
+   assert(engine,
+          "usage: bench.lua PATH/TO/CAPTURE.PCAP FILTERS ENGINE [ITERATIONS]")
    iterations = tonumber(iterations) or 50
-   local tests = load_tests(capture, engine)
+   local tests = load_tests(filters, engine)
    local header, capture_start, capture_end = savefile.open_and_mmap(capture)
    run_tests(tests, capture_start, capture_end, iterations)
 end

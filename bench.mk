@@ -11,8 +11,8 @@ csv: $(CSV)
 maintainer-clean:
 	rm -f $(CSV) $(PNG)
 
-%.csv: $(top_srcdir)/bench.lua $(SAVEFILE)
-	luajit $(top_srcdir)/bench.lua $(SAVEFILE) $* > $@.tmp
+%.csv: $(top_srcdir)/bench.lua $(SAVEFILE) filters
+	luajit $(top_srcdir)/bench.lua $(SAVEFILE) filters $* > $@.tmp
 	mv $@.tmp $@
 
 $(PNG): Makefile $(top_srcdir)/bench.mk $(CSV)

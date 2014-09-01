@@ -562,9 +562,13 @@ I'm skipping traces that get compiled before we enter the filter loop.
 ---- TRACE 66 stop -> loop
 ```
 
-Note that the trace stops when the first port test succeeds.
+Note that the trace stops when the first port test succeeds.  The loop
+is not tight but it's not bad either -- all the badness was hoisted
+before the loop.
 
 ### 67: Second port test
+
+Going from one trace to another seems to be terrible!
 
 ```
 ---- TRACE 67 start 66/21 "portrange 0-6000":32

@@ -80,6 +80,10 @@ mode, under Debian GNU/Linux (3.14-2), on an otherwise unloaded machine.
 
 # Web server: 20K packets from `wingolog.org`
 
-![Summary](https://raw.githubusercontent.com/Igalia/pflua-bench/master/results/wingolog.org/wingolog.org.png)
+![Summary](https://raw.githubusercontent.com/Igalia/pflua-bench/master/results/wingolog.org-1/wingolog.org-1.png)
 
-[Raw results.](https://github.com/Igalia/pflua-bench/tree/master/results/wingolog.org)
+[Raw results.](https://github.com/Igalia/pflua-bench/tree/master/results/wingolog.org-1)
+
+![Summary](https://raw.githubusercontent.com/Igalia/pflua-bench/master/results/wingolog.org-2/wingolog.org-2.png)
+
+[Raw results.](https://github.com/Igalia/pflua-bench/tree/master/results/wingolog.org-2)

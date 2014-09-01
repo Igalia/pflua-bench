@@ -136,10 +136,10 @@ this is a LuaJIT issue.  What we see from the `-jv -jdump` output is that
 the first trace that goes through does end up residualizing a tight
 loop, after hoisting a bunch of dynamic checks up before the loop (see
 [trace
-66](https://github.com/Igalia/pflua-bench/blob/master/results/wingolog.org-2/trace.md#66-inner-loop),
+66](https://github.com/Igalia/pflua-bench/blob/master/results/wingolog.org-2/trace.md#66-inner-loop)),
 but that subsequent variations get compiled to traces that have a fairly
-large state transfer penalty [trace
-67](https://github.com/Igalia/pflua-bench/blob/master/results/wingolog.org-2/trace.md#67-second-port-test)
+large state transfer penalty ([trace
+67](https://github.com/Igalia/pflua-bench/blob/master/results/wingolog.org-2/trace.md#67-second-port-test))
 and which don't jump to the top of the loop -- they jump to the top of
 the trace with the loop, which then has to do a bunch of useless work.
 

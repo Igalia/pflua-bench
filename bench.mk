@@ -3,6 +3,7 @@ GUILE=guile
 PATH:=$(top_srcdir)/deps/pflua/deps/luajit/usr/local/bin:$(PATH)
 ENGINES:=libpcap linux-bpf linux-ebpf bpf-lua pflua
 CSV:=$(addsuffix .csv, $(ENGINES))
+ITERATIONS?=50
 
 all: $(PNG)
 
@@ -12,7 +13,7 @@ maintainer-clean:
 	rm -f $(CSV) $(PNG)
 
 %.csv: $(top_srcdir)/bench.lua $(SAVEFILE) filters
-	luajit $(top_srcdir)/bench.lua $(SAVEFILE) filters $* > $@.tmp
+	luajit $(top_srcdir)/bench.lua $(SAVEFILE) filters $* $(ITERATIONS) > $@.tmp
 	mv $@.tmp $@
 
 $(PNG): Makefile $(top_srcdir)/bench.mk $(CSV)

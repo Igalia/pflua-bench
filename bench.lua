@@ -86,15 +86,19 @@ end
 local function filter_time(pred, ptr, ptr_end, expected)
    local total_count = 0
    local match_count = 0
+   local offset = 0
+   local max_offset = ptr_end - ptr
+   local pcap_record_size = ffi.sizeof("struct pcap_record")
    local start = now()
-   while ptr < ptr_end do
-      local record = ffi.cast("struct pcap_record *", ptr)
+   while offset < max_offset do
+      local cur_ptr = ptr + offset
+      local record = ffi.cast("struct pcap_record *", cur_ptr)
       local packet = ffi.cast("unsigned char *", record + 1)
       if pred(packet, record.incl_len) then
          match_count = match_count + 1
       end
       total_count = total_count + 1
-      ptr = packet + record.incl_len
+      offset = offset + pcap_record_size + record.incl_len
    end
    local lapse = now() - start
    if match_count ~= expected then

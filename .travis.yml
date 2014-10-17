@@ -4,8 +4,6 @@ language: erlang
 
 before_install: git submodule update --init --recursive
 
-install:
-    - sudo apt-get install libpcap-dev
-    - sudo apt-get install linux-headers-$(uname -r)
+install: sudo apt-get install libpcap-dev linux-headers-3.13.0-37
 
 script: make && make check

@@ -4,6 +4,8 @@ language: erlang
 
 before_install: git submodule update --init --recursive
 
-install: sudo apt-get install libpcap-dev linux-libc-dev
+install:
+    - sudo apt-get update
+    - sudo apt-get install libpcap-dev linux-libc-dev
 
 script: make && make check

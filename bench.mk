@@ -3,7 +3,7 @@ GUILE=guile
 PATH:=$(top_srcdir)/deps/pflua/deps/luajit/usr/local/bin:$(PATH)
 ENGINES:=libpcap linux-bpf linux-ebpf bpf-lua pflua
 CSV:=$(addsuffix .csv, $(ENGINES))
-ITERATIONS?=50
+ITERATIONS?=20
 
 all: $(PNG)
 

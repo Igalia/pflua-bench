@@ -83,42 +83,48 @@ local function load_tests(filters, engine)
    return tests
 end
 
-local function filter_time(pred, ptr, ptr_end, expected)
-   local total_count = 0
-   local match_count = 0
-   local offset = 0
-   local max_offset = ptr_end - ptr
-   local pcap_record_size = ffi.sizeof("struct pcap_record")
+local function run_filter(min_time, packets, pred)
    local start = now()
-   while offset < max_offset do
-      local cur_ptr = ptr + offset
-      local record = ffi.cast("struct pcap_record *", cur_ptr)
-      local packet = ffi.cast("unsigned char *", record + 1)
-      offset = offset + pcap_record_size + record.incl_len
-      if pred(packet, record.incl_len) then
-         match_count = match_count + 1
+   local finish = start
+   local seen, matched
+   local iterations = 0
+   while finish - start < min_time do
+      seen, matched = 0, 0
+      for i = 1,#packets do
+         seen = seen + 1
+         if pred(packets[i].packet, packets[i].len) then
+            matched = matched + 1
+         end
       end
-      total_count = total_count + 1
+      iterations = iterations + 1
+      finish = now()
    end
-   local lapse = now() - start
-   if match_count ~= expected then
-      error("expected "..expected.." matching packets, but got "..match_count)
-   end
-   return total_count / lapse / 1e6
+   return seen, matched, (finish - start), iterations
 end
 
-function run_filters(tests, ptr, ptr_end)
+-- The total time for the test is # of tests * # of samples * # of
+-- scenarios * test_time.  So about 500 times the run_filter number.  I
+-- set it to 100ms so that we finish in under a minute.
+local function filter_time(pred, packets, expected)
+   local total, matched, lapse, iterations = run_filter(0.1, packets, pred)
+   if matched ~= expected then
+      error("expected "..expected.." matching packets, but got "..matched)
+   end
+   return total * iterations / lapse / 1e6
+end
+
+function run_filters(tests, packets)
    local results = {}
    for i, test in ipairs(tests) do
-      results[i] = filter_time(test.pred, ptr, ptr_end, test.count)
+      results[i] = filter_time(test.pred, packets, test.count)
    end
    return results
 end
 
-function run_tests(tests, capture_start, capture_end, iterations)
-   run_filters(tests, capture_start, capture_end) -- Warmup
+function run_tests(tests, packets, iterations)
+   run_filters(tests, packets) -- Warmup
    for i=1,iterations do
-      local scores = run_filters(tests, capture_start, capture_end)
+      local scores = run_filters(tests, packets)
       print(table.concat(scores, '\t'))
       io.flush()
    end
@@ -130,8 +136,8 @@ function main(...)
           "usage: bench.lua PATH/TO/CAPTURE.PCAP FILTERS ENGINE [ITERATIONS]")
    iterations = tonumber(iterations) or 50
    local tests = load_tests(filters, engine)
-   local header, capture_start, capture_end = savefile.open_and_mmap(capture)
-   run_tests(tests, capture_start, capture_end, iterations)
+   local packets = savefile.load_packets(capture)
+   run_tests(tests, packets, iterations)
 end
 
 main(...)

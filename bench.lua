@@ -46,7 +46,7 @@ end
 
 local compilers = {
    libpcap = function (filter)
-      return pf.compile_filter(filter, {pcap_offline_filter=true})
+      return pf.compile_filter(filter, {libpcap=true})
    end,
    ["linux-bpf"] = function (filter)
       return compile_linux_jit_filter(filter, linux_bpf_jit)

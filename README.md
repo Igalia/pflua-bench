@@ -166,3 +166,57 @@ performance isn't terrible but it could be much better.
 Finally, a plug: if you are interested in Lua, networking, JIT
 compilation, and all this kind of thing, [let us
 know!](https://github.com/Igalia/pflua#authors).
+
+## How to run
+
+First, check out this repo:
+
+```
+git clone https://github.com/Igalia/pflua-bench.git
+cd pflua-bench
+```
+
+Then we need to check out the dependencies:
+
+```
+git submodule update --init # get pflua
+cd deps/pflua
+git submodule update --init # get luajit
+make
+cd ../..
+```
+
+Then compile the BPF C files:
+
+```
+cd linux-bpf-jit
+make
+cd ../linux-ebpf-jit
+make
+cd ..
+```
+
+You also need to have guile, guile-cairo, and guile-charting installed.
+On a Debian system, you can install the first two via apt:
+
+```
+sudo apt-get install guile-2.0 guile-cairo guile-2.0-dev guile-cairo-dev
+```
+
+and then guile-charting from git:
+
+```
+git clone https://gitorious.org/guile-charting/guile-charting.git
+cd guile-charting
+autoreconf -vif
+./configure && make
+cd ..
+mkdir ~/src
+mv guile-charting ~/src/
+```
+
+Finally, you can run the benchmark like this:
+
+```
+~/src/guile-charting/env make bench
+```

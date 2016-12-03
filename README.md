@@ -21,7 +21,9 @@ pflang implementations:
 
 * _pflua_: Pflang compiled directly to Lua by pflua.
 
-See https://github.com/Igalia/pflua for more on pflua's two execution
+* _pflua-native_: Pflang compiled to x86 asm by pflua.
+
+See https://github.com/Igalia/pflua for more on pflua's three execution
 engines, and for more resources on pflang and BPF.
 
 ## Experimental environment

@@ -1,9 +1,10 @@
 GUILE=guile
 
 PATH:=$(top_srcdir)/deps/pflua/deps/luajit/usr/local/bin:$(PATH)
-ENGINES:=libpcap linux-bpf linux-ebpf bpf-lua pflua
+ENGINES:=libpcap linux-bpf linux-ebpf bpf-lua pflua pflua-native
 CSV:=$(addsuffix .csv, $(ENGINES))
 ITERATIONS?=20
+export LD_LIBRARY_PATH := $(top_srcdir)/deps/pflua/deps/dynasm:$(LD_LIBRARY_PATH)
 
 all: $(PNG)
 

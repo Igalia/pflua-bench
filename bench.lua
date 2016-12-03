@@ -8,6 +8,7 @@ end
 local dot = dirname(arg[0])
 
 package.path = package.path .. ";" .. dot .. "/deps/pflua/src/?.lua"
+                            .. ";" .. dot .. "/deps/pflua/deps/dynasm/?.lua"
 
 local ffi = require("ffi")
 local pf = require("pf")
@@ -59,6 +60,9 @@ local compilers = {
    end,
    pflua = function (filter)
       return pf.compile_filter(filter)
+   end,
+   ["pflua-native"] = function (filter)
+      return pf.compile_filter(filter, {native=true})
    end
 }
 
